@@ -237,9 +237,11 @@ async def unlike_article(article_id: str):
     return LikeResponse(id=article_id, likes=current)
 
 
-# --- Public posts (open submission for the 'voice' section) ---
-@api_router.post("/voice/posts", response_model=Article)
-async def create_voice_post(payload: PublicPostCreate):
+# --- Public posts (open submission for ANY section) ---
+@api_router.post("/sections/{section}/posts", response_model=Article)
+async def create_section_post(section: str, payload: PublicPostCreate):
+    if section not in ALLOWED_SECTIONS:
+        raise HTTPException(status_code=400, detail="قسم غير صالح")
     title = payload.title.strip()
     content = payload.content.strip()
     if len(title) < 3 or len(content) < 5:
@@ -249,13 +251,19 @@ async def create_voice_post(payload: PublicPostCreate):
         title=title,
         excerpt=excerpt,
         content=content,
-        section="voice",
+        section=section,
         image_url="",
         author=(payload.author or "ولي أمر").strip() or "ولي أمر",
         featured=False,
     )
     await db.articles.insert_one(serialize_dt(article.model_dump()))
     return article
+
+
+# Backwards-compat alias
+@api_router.post("/voice/posts", response_model=Article)
+async def create_voice_post(payload: PublicPostCreate):
+    return await create_section_post("voice", payload)
 
 
 # --- Suggestions (مقترحات أولياء الأمور) ---

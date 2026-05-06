@@ -9,7 +9,7 @@ import { ArticleCard } from "../components/ArticleCard";
 import { toast } from "sonner";
 import { Send, Plus } from "lucide-react";
 
-const VoicePostForm = ({ onCreated }) => {
+const PostForm = ({ section, sectionLabel, onCreated }) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ author: "", title: "", content: "" });
   const [busy, setBusy] = useState(false);
@@ -22,7 +22,7 @@ const VoicePostForm = ({ onCreated }) => {
     }
     setBusy(true);
     try {
-      const res = await api.post("/voice/posts", {
+      const res = await api.post(`/sections/${section}/posts`, {
         title: form.title.trim(),
         content: form.content.trim(),
         author: form.author.trim() || "ولي أمر",
@@ -42,20 +42,20 @@ const VoicePostForm = ({ onCreated }) => {
     return (
       <div
         className="bg-[#F0EBE1] border border-[#E2DAC8] rounded-2xl p-6 lg:p-8 mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-        data-testid="voice-post-cta"
+        data-testid="post-cta"
       >
         <div>
           <p className="font-display text-2xl text-[#2D332F] mb-1">
-            اكتبي موضوعكِ
+            اكتبي تحت قسم «{sectionLabel}»
           </p>
           <p className="text-sm text-[#5C6660]">
-            شاركي رأيكِ أو موضوعكِ مع بقيّة الأمهات، وستظهر تحته أزرار التصويت
-            والإعجاب.
+            شاركينا موضوعاً أو رأياً، وستظهر مشاركتكِ مع زرّ إعجاب يتفاعل به
+            القارئات.
           </p>
         </div>
         <button
           onClick={() => setOpen(true)}
-          data-testid="open-voice-post"
+          data-testid="open-post-form"
           className="btn-pill btn-primary shrink-0"
         >
           <Plus size={16} />
@@ -69,15 +69,17 @@ const VoicePostForm = ({ onCreated }) => {
     <form
       onSubmit={submit}
       className="bg-white border border-[#E2DAC8] rounded-2xl p-6 lg:p-8 mb-12 space-y-4"
-      data-testid="voice-post-form"
+      data-testid="post-form"
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-2xl text-[#2D332F]">مشاركة جديدة</h3>
+        <h3 className="font-display text-2xl text-[#2D332F]">
+          مشاركة جديدة في «{sectionLabel}»
+        </h3>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="text-sm text-[#5C6660] hover:text-[#2D332F]"
-          data-testid="close-voice-post"
+          data-testid="close-post-form"
         >
           إلغاء
         </button>
@@ -87,7 +89,7 @@ const VoicePostForm = ({ onCreated }) => {
         placeholder="اسمكِ (اختياري)"
         value={form.author}
         onChange={(e) => setForm({ ...form, author: e.target.value })}
-        data-testid="voice-author"
+        data-testid="post-author"
         className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none"
       />
       <input
@@ -95,7 +97,7 @@ const VoicePostForm = ({ onCreated }) => {
         placeholder="عنوان الموضوع"
         value={form.title}
         onChange={(e) => setForm({ ...form, title: e.target.value })}
-        data-testid="voice-title"
+        data-testid="post-title"
         className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none"
       />
       <textarea
@@ -103,13 +105,13 @@ const VoicePostForm = ({ onCreated }) => {
         placeholder="اكتبي موضوعكِ بحرّية..."
         value={form.content}
         onChange={(e) => setForm({ ...form, content: e.target.value })}
-        data-testid="voice-content"
+        data-testid="post-content"
         className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none resize-none"
       />
       <button
         type="submit"
         disabled={busy}
-        data-testid="submit-voice-post"
+        data-testid="submit-post"
         className="btn-pill btn-primary disabled:opacity-50"
       >
         {busy ? "جارٍ النشر..." : "نشر المشاركة"}
@@ -171,9 +173,11 @@ const SectionPage = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 lg:px-10 py-16">
-        {isVoice && (
-          <VoicePostForm onCreated={(post) => setArticles([post, ...articles])} />
-        )}
+        <PostForm
+          section={section}
+          sectionLabel={SECTION_LABELS[section]}
+          onCreated={(post) => setArticles([post, ...articles])}
+        />
 
         {loading && (
           <p className="text-center text-[#5C6660]">جارٍ التحميل...</p>
@@ -188,9 +192,7 @@ const SectionPage = () => {
               {SECTION_LABELS[section]}
             </h2>
             <p className="text-[#5C6660] max-w-md mx-auto leading-loose">
-              {isVoice
-                ? "كوني أوّل مَن يبدأ النقاش هنا ✨"
-                : "ستظهر هنا المقالات فور إضافتها."}
+              كوني أوّل مَن يكتب في هذا القسم ✨
             </p>
           </div>
         )}
