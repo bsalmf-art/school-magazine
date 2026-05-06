@@ -2,10 +2,9 @@ import { useState } from "react";
 import { GraduationCap, Landmark } from "lucide-react";
 
 // Replace these constants with your actual logo URLs.
-// You can put your PNG files in /app/frontend/public/ (e.g. "/school-logo.png")
-// and update the paths below, or use full external URLs.
-const SCHOOL_LOGO = "/school-logo.png";
-const MINISTRY_LOGO = "/ministry-logo.png";
+// Files are in /app/frontend/public/ — replace them to update the logos.
+const SCHOOL_LOGO = "/school-logo.jpeg";
+const MINISTRY_LOGO = "/ministry-logo.jpeg";
 
 const LogoSlot = ({ src, alt, Fallback, label, testId }) => {
   const [failed, setFailed] = useState(false);
@@ -41,13 +40,13 @@ const OfficialHeader = () => {
       data-testid="official-header"
     >
       <div className="max-w-7xl mx-auto px-4 md:px-10 py-3 md:py-4 flex items-center justify-between gap-4">
-        {/* School logo (right side in RTL) */}
+        {/* Ministry logo (right side in RTL) */}
         <LogoSlot
-          src={SCHOOL_LOGO}
-          alt="شعار المدرسة"
-          Fallback={GraduationCap}
-          label="المدرسة"
-          testId="school-logo"
+          src={MINISTRY_LOGO}
+          alt="شعار وزارة التعليم"
+          Fallback={Landmark}
+          label="الوزارة"
+          testId="ministry-logo"
         />
 
         {/* Center text */}
@@ -58,13 +57,13 @@ const OfficialHeader = () => {
           <p className="text-[#987239] font-semibold">الثانوية ٥٦ — مسارات</p>
         </div>
 
-        {/* Ministry logo (left side in RTL) */}
+        {/* School logo (left side in RTL) */}
         <LogoSlot
-          src={MINISTRY_LOGO}
-          alt="شعار وزارة التعليم"
-          Fallback={Landmark}
-          label="الوزارة"
-          testId="ministry-logo"
+          src={SCHOOL_LOGO}
+          alt="شعار المدرسة"
+          Fallback={GraduationCap}
+          label="المدرسة"
+          testId="school-logo"
         />
       </div>
     </div>
