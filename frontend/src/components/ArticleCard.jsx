@@ -42,7 +42,7 @@ export const LikeButton = ({ articleId, initialLikes = 0, size = "default" }) =>
         delete m[articleId];
       } else {
         m[articleId] = true;
-        toast.success("شكراً لتفاعلكِ");
+        toast.success("شكراً لتفاعلك");
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
       setLiked(!liked);

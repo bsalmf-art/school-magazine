@@ -77,7 +77,7 @@ const PostForm = ({ section, onCreated }) => {
   const submit = async (e) => {
     e.preventDefault();
     if (form.title.trim().length < 3 || form.content.trim().length < 5) {
-      toast.error("يُرجى كتابة عنوان وموضوع كافيَين");
+      toast.error("يُرجى إدخال عنوان ومحتوى كافيَين");
       return;
     }
     setBusy(true);
@@ -88,12 +88,12 @@ const PostForm = ({ section, onCreated }) => {
         author: form.author.trim() || "ولي أمر",
         image_url: imageUrl || "",
       });
-      toast.success("تم نشر مشاركتكِ");
+      toast.success("تم نشر المشاركة");
       reset();
       setOpen(false);
       onCreated && onCreated(res.data);
     } catch (err) {
-      toast.error("حدث خطأ، حاولي مرّة أخرى");
+      toast.error("حدث خطأ، حاول مرّة أخرى");
     } finally {
       setBusy(false);
     }
@@ -102,24 +102,16 @@ const PostForm = ({ section, onCreated }) => {
   if (!open) {
     return (
       <div
-        className="bg-[#F0EBE1] border border-[#E2DAC8] rounded-2xl p-6 lg:p-8 mb-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+        className="mb-12 flex justify-end"
         data-testid="post-cta"
       >
-        <div>
-          <p className="font-display text-2xl text-[#2D332F] mb-1">
-            أضيفي مشاركتكِ
-          </p>
-          <p className="text-sm text-[#5C6660]">
-            ستظهر مشاركتكِ مع زرّ إعجاب يتفاعل به القارئات.
-          </p>
-        </div>
         <button
           onClick={() => setOpen(true)}
           data-testid="open-post-form"
-          className="btn-pill btn-primary shrink-0"
+          className="btn-pill btn-primary"
         >
           <Plus size={16} />
-          مشاركة جديدة
+          مشاركة
         </button>
       </div>
     );
@@ -148,7 +140,7 @@ const PostForm = ({ section, onCreated }) => {
 
       <input
         type="text"
-        placeholder="اسمكِ (اختياري)"
+        placeholder="الاسم (اختياري)"
         value={form.author}
         onChange={(e) => setForm({ ...form, author: e.target.value })}
         data-testid="post-author"
@@ -156,7 +148,7 @@ const PostForm = ({ section, onCreated }) => {
       />
       <input
         type="text"
-        placeholder="عنوان الموضوع"
+        placeholder="العنوان"
         value={form.title}
         onChange={(e) => setForm({ ...form, title: e.target.value })}
         data-testid="post-title"
@@ -167,7 +159,7 @@ const PostForm = ({ section, onCreated }) => {
         <textarea
           ref={contentRef}
           rows={6}
-          placeholder="اكتبي موضوعكِ..."
+          placeholder="المحتوى"
           value={form.content}
           onChange={(e) => setForm({ ...form, content: e.target.value })}
           data-testid="post-content"
@@ -179,7 +171,7 @@ const PostForm = ({ section, onCreated }) => {
             data-testid="emoji-picker"
           >
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-[#5C6660]">اختاري إيموجي</span>
+              <span className="text-xs text-[#5C6660]">إيموجي</span>
               <button
                 type="button"
                 onClick={() => setShowEmoji(false)}
@@ -244,7 +236,7 @@ const PostForm = ({ section, onCreated }) => {
           className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-[#E2DAC8] hover:bg-[#F0EBE1] text-[#2D332F] disabled:opacity-50"
         >
           <ImagePlus size={16} className="text-[#987239]" />
-          {uploading ? "جارٍ الرفع..." : "أضيفي صورة"}
+          {uploading ? "جارٍ الرفع..." : "صورة"}
         </button>
         <button
           type="button"
@@ -261,7 +253,7 @@ const PostForm = ({ section, onCreated }) => {
           data-testid="submit-post"
           className="btn-pill btn-primary disabled:opacity-50 ms-auto"
         >
-          {busy ? "جارٍ النشر..." : "نشر المشاركة"}
+          {busy ? "جارٍ النشر..." : "نشر"}
           <Send size={16} />
         </button>
       </div>
@@ -339,7 +331,7 @@ const SectionPage = () => {
               {SECTION_LABELS[section]}
             </h2>
             <p className="text-[#5C6660] max-w-md mx-auto leading-loose">
-              كوني أوّل مَن يكتب في هذا القسم ✨
+              لا توجد مشاركات بعد ✨
             </p>
           </div>
         )}

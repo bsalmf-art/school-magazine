@@ -113,7 +113,7 @@ const ArticleDetail = () => {
 
         <div className="mt-12 flex flex-col items-center gap-3 border-y border-[#E2DAC8] py-8">
           <p className="text-xs tracking-[0.3em] text-[#987239] uppercase">
-            هل أعجبكِ هذا الموضوع؟
+            هل أعجبك هذا الموضوع؟
           </p>
           <LikeButton
             articleId={article.id}

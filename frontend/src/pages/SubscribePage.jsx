@@ -17,12 +17,13 @@ const SubscribePage = () => {
     setLoading(true);
     try {
       await api.post("/subscriptions", form);
-      toast.success("تم اشتراكك بنجاح");
+      toast.success("تم الاشتراك بنجاح");
       setDone(true);
       setForm({ name: "", email: "" });
     } catch (err) {
       const msg =
-        err?.response?.data?.detail || "حدث خطأ، تأكّدي من البريد وحاولي مرّة أخرى";
+        err?.response?.data?.detail ||
+        "حدث خطأ، تحقّق من البريد وحاول مرّة أخرى";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -38,11 +39,11 @@ const SubscribePage = () => {
             ابقَ على اطّلاع
           </p>
           <h1 className="font-display text-5xl md:text-6xl mb-5">
-            اشتركي في المجلة
+            الاشتراك في المجلة
           </h1>
           <p className="text-lg leading-loose max-w-2xl text-[#2D332F]/90">
-            دعينا نُرسل لكِ كلّ عدد جديد فور صدوره، مع أبرز المقالات والتنبيهات
-            المهمّة من المدرسة، مباشرةً إلى بريدكِ.
+            نُرسل إليك كلّ عدد جديد فور صدوره، مع أبرز المقالات والتنبيهات
+            المهمّة من المدرسة، مباشرةً إلى البريد.
           </p>
         </div>
       </header>
@@ -55,10 +56,10 @@ const SubscribePage = () => {
           >
             <CheckCircle2 size={56} className="text-[#8B9D83] mx-auto mb-4" />
             <h2 className="font-display text-3xl text-[#2D332F] mb-3">
-              أهلاً بكِ بيننا
+              تمّ الاشتراك بنجاح
             </h2>
             <p className="text-[#5C6660] leading-loose mb-6">
-              تم تسجيل بريدك في قائمة المُشتركات. سنوافيكِ بكلّ جديد بإذن الله.
+              تم تسجيل البريد في قائمة المشتركين. سنوافيك بكلّ جديد بإذن الله.
             </p>
             <button
               onClick={() => setDone(false)}
@@ -84,7 +85,7 @@ const SubscribePage = () => {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 data-testid="subscribe-name"
                 className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none"
-                placeholder="اسمك الكريم"
+                placeholder="الاسم"
               />
             </div>
             <div>
@@ -106,10 +107,10 @@ const SubscribePage = () => {
               data-testid="subscribe-submit"
               className="btn-pill btn-primary w-full justify-center disabled:opacity-50"
             >
-              {loading ? "جارٍ الاشتراك..." : "اشتركي الآن"}
+              {loading ? "جارٍ الاشتراك..." : "اشترك الآن"}
             </button>
             <p className="text-xs text-[#5C6660] text-center leading-loose">
-              لن نُشارك بريدك مع أحد، ويمكنكِ إلغاء الاشتراك في أي وقت.
+              لن نُشارك البريد مع أحد، ويمكنك إلغاء الاشتراك في أي وقت.
             </p>
           </form>
         )}

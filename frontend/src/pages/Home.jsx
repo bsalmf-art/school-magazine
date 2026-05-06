@@ -31,7 +31,7 @@ const SectionImageCard = ({ section, count = 0 }) => (
         {section.desc}
       </p>
       <span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#D4A373] group-hover:text-white transition-colors">
-        ادخلي للقسم
+        الدخول للقسم
         <ArrowLeft size={14} className="rtl:rotate-180" />
       </span>
     </div>
@@ -89,7 +89,7 @@ const Home = () => {
               مجلة دورية إلكترونية
             </p>
             <p className="text-lg text-[#5C6660] leading-loose max-w-xl mb-10">
-              منصّةُ تواصلٍ بين البيت والمدرسة، نحتفي فيها بإنجازات بناتنا،
+              منصّةُ تواصلٍ بين البيت والمدرسة، نحتفي فيها بإنجازات الطالبات،
               ونُنصت لمقترحات أولياء الأمور، ونزرع وعياً يليق بأجيال الغد.
             </p>
             <div className="flex flex-wrap gap-4">
@@ -263,10 +263,10 @@ const Home = () => {
           <div>
             <Mail size={32} className="text-[#D4A373] mb-5" />
             <h3 className="font-display text-3xl md:text-4xl mb-4">
-              لا يفوتكِ عددٌ جديد
+              لا يفوتك العدد الجديد
             </h3>
             <p className="text-sm leading-loose opacity-90 max-w-md">
-              اشتركي ببريدكِ، ويصلكِ أوّلاً إشعارٌ عند صدور كلّ عدد، مع أهمّ
+              اشترك بالبريد الإلكتروني، ويصلك إشعارٌ عند صدور كلّ عدد، مع أهمّ
               المقالات والتنبيهات من المدرسة.
             </p>
           </div>
@@ -276,7 +276,7 @@ const Home = () => {
               className="btn-pill bg-[#D4A373] text-[#2D332F] hover:bg-[#FAF8F5] hover:text-[#2D332F]"
               data-testid="subscribe-banner-cta"
             >
-              اشتركي الآن
+              اشترك الآن
               <ArrowLeft size={16} className="rtl:rotate-180" />
             </Link>
           </div>
@@ -297,13 +297,13 @@ const Home = () => {
             <Sparkles size={32} className="mb-5" />
             <h3 className="font-display text-3xl md:text-4xl mb-3">رأيك يهمنا</h3>
             <p className="text-sm leading-loose opacity-90 max-w-md">
-              تفاعلي مع المجلة بنقرةٍ واحدة عبر أيقونات تعبيرية تختصر انطباعك،
-              وشاهدي تفاعل بقيّة القارئات.
+              تفاعل مع المجلة بنقرةٍ واحدة عبر أيقونات تعبيرية تختصر انطباعك،
+              وشاهد تفاعل بقيّة القرّاء.
             </p>
           </div>
           <div className="flex md:justify-end">
             <span className="inline-flex items-center gap-2 text-sm font-semibold border-b border-[#FAF8F5]/40 pb-1">
-              صوّتي الآن
+              صوّت الآن
               <ArrowLeft size={14} className="rtl:rotate-180" />
             </span>
           </div>
