@@ -1,51 +1,62 @@
-import { useEffect } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { Toaster } from "sonner";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import Home from "@/pages/Home";
+import ArticleDetail from "@/pages/ArticleDetail";
+import SectionPage from "@/pages/SectionPage";
+import SuggestionsPage from "@/pages/SuggestionsPage";
+import OpinionPage from "@/pages/OpinionPage";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+const Shell = () => {
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
+    <>
+      <Navbar />
+      <main className="min-h-[60vh]">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/articles/:id" element={<ArticleDetail />} />
+          <Route path="/section/:section" element={<SectionPage />} />
+          <Route path="/suggestions" element={<SuggestionsPage />} />
+          <Route path="/opinion" element={<OpinionPage />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route
+            path="*"
+            element={
+              <div className="max-w-3xl mx-auto px-6 py-32 text-center">
+                <h2 className="font-display text-3xl text-[#2D332F] mb-2">
+                  الصفحة غير موجودة
+                </h2>
+                <p className="text-[#5C6660]">
+                  عُد إلى الرئيسية واستكشف المجلة.
+                </p>
+              </div>
+            }
+          />
+        </Routes>
+      </main>
+      <Footer />
+    </>
   );
 };
 
 function App() {
   return (
-    <div className="App">
+    <div className="App" dir="rtl">
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
+        <Shell />
+        <Toaster
+          position="top-center"
+          richColors
+          dir="rtl"
+          toastOptions={{
+            style: { fontFamily: "Cairo, sans-serif" },
+          }}
+        />
       </BrowserRouter>
     </div>
   );
