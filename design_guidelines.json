@@ -1,0 +1,96 @@
+{
+  "theme": "LIGHT",
+  "archetype": "1_ORGANIC_EARTHY",
+  "domain": "Education / School Magazine",
+  "rtl_required": true,
+  "colors": {
+    "background": {
+      "primary": "#FAF8F5",
+      "secondary": "#F0EBE1",
+      "glass": "rgba(250, 248, 245, 0.8)"
+    },
+    "text": {
+      "primary": "#2D332F",
+      "secondary": "#5C6660",
+      "inverse": "#FFFFFF",
+      "accent": "#987239"
+    },
+    "brand": {
+      "primary": "#8B9D83",
+      "secondary": "#C2A878",
+      "accent": "#D4A373",
+      "border": "#E2DAC8"
+    }
+  },
+  "typography": {
+    "font_families": {
+      "heading": "'Amiri', 'Tajawal', serif",
+      "body": "'Cairo', 'Readex Pro', sans-serif"
+    },
+    "scales": {
+      "h1": "text-5xl md:text-6xl+ tracking-tight font-serif",
+      "h2": "text-3xl md:text-4xl tracking-tight font-serif",
+      "h3": "text-2xl font-serif",
+      "h4": "text-xl font-serif",
+      "body": "text-base font-sans leading-relaxed",
+      "small": "text-sm font-sans text-[#5C6660]"
+    },
+    "google_fonts_import": "@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap');"
+  },
+  "spacing_and_layout": {
+    "padding_scale": "Generous spacing. Use p-8, p-12, p-16 for sections to create breathing room.",
+    "grid_strategy": "Editorial Mode (Tetris Grid). Asymmetrical grids for articles (e.g., col-span-8 and col-span-4).",
+    "border_radius": "Rounded-xl for cards, mixed with sharp edges for a modern editorial feel.",
+    "alignment": "RTL by default. Use text-right for standard content. Optical alignment prioritizing Arabic reading direction."
+  },
+  "components": {
+    "navigation": {
+      "type": "Glassmorphism header",
+      "style": "backdrop-blur-xl bg-[#FAF8F5]/80 border-b border-[#E2DAC8]/50. Must include RTL layout.",
+      "shadcn_overrides": "Remove default ring colors, use brand primary for focus states."
+    },
+    "hero_cover": {
+      "type": "Magazine Cover",
+      "style": "Full height (min-h-[80vh]), split layout or large image with 'معاً نبني جسوراً نحو النجاح' in massive Amiri font. Use subtle noise texture."
+    },
+    "cards_articles": {
+      "type": "Editorial Cards",
+      "style": "Go cardless or use subtle borders (border-[#E2DAC8]). Avoid heavy shadows. Images should have elegant aspect ratios (e.g., 3:4 or 16:9)."
+    },
+    "forms": {
+      "type": "Shadcn Forms",
+      "style": "For 'مقترحات أولياء الأمور' (Parents Suggestions) and 'رأيك يهمنا' (Opinion). Customize Shadcn inputs with bg-white, border-[#E2DAC8], focus:ring-[#8B9D83]."
+    },
+    "admin_panel": {
+      "type": "Dashboard",
+      "style": "Clean, high-contrast structural layout. Use Shadcn tables, tabs, and dialogs. Must support RTL."
+    }
+  },
+  "motion_and_interactions": {
+    "hover_states": "Images scale up slightly (scale-105) on hover within hidden overflow. Text changes color to brand accent.",
+    "page_transitions": "Framer motion staggered fade-ins for grid items.",
+    "scrolling": "Use lenis for smooth scrolling if possible, or native smooth behavior."
+  },
+  "media": {
+    "image_urls": {
+      "hero_background": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
+      "news_1": "https://images.unsplash.com/photo-1455390582262-044cdead27d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "news_2": "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "spotlight_student": "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "abstract_editorial": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+    },
+    "icons": "Use lucide-react (ensure flip for RTL if directional)."
+  },
+  "accessibility_and_testing": {
+    "contrast": "Ensure text over images has dark gradient overlays (e.g., bg-black/40).",
+    "test_ids": "All interactive elements must have data-testid (e.g., data-testid='submit-suggestion-button', data-testid='article-card-1')."
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: Add `dir=\"rtl\"` to the HTML tag or main wrapper. The entire UI must be built for Right-to-Left.",
+    "Use Tailwind's standard padding/margin. In RTL, ml-4 becomes mr-4 visually if using logical properties. Prefer logical properties like ps-4, pe-4, ms-4, me-4.",
+    "Do NOT use 'Inter' font. Import and use 'Amiri' for headings and 'Cairo' for body.",
+    "Construct the homepage as a scrolling editorial experience: Hero (Cover) -> Towards a Conscious Path -> Latest News -> Excellence Spotlight -> Feedback Form.",
+    "Build a separate Admin Panel route (e.g., /admin) for managing articles and viewing suggestions.",
+    "Use Shadcn UI for forms, tabs, and dialogs, but customize the visual style to match the Organic Earthy theme (beige/sage green)."
+  ]
+}
