@@ -1,6 +1,7 @@
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
+import OfficialHeader from "@/components/OfficialHeader";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
@@ -15,6 +16,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 const Shell = () => {
   return (
     <>
+      <OfficialHeader />
       <Navbar />
       <main className="min-h-[60vh]">
         <Routes>

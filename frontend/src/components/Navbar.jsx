@@ -32,8 +32,8 @@ const Navbar = () => {
           </div>
           <div className="leading-tight">
             <p className="font-display text-lg text-[#2D332F]">معاً نبني جسوراً</p>
-            <p className="text-[11px] tracking-widest text-[#987239] uppercase">
-              المجلة الإلكترونية
+            <p className="text-[10px] md:text-[11px] tracking-widest text-[#987239]">
+              مجلة دورية إلكترونية
             </p>
           </div>
         </Link>

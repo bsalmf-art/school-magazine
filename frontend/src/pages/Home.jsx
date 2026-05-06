@@ -60,13 +60,16 @@ const Home = () => {
         <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-24 lg:pt-24 lg:pb-32 grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-7 editorial-rise">
             <p className="text-xs tracking-[0.4em] text-[#987239] mb-6 uppercase">
-              العدد الأول · المجلة الإلكترونية
+              العدد الأول · مجلة دورية إلكترونية
             </p>
-            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[1.05] text-[#2D332F] mb-8">
+            <h1 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[1.05] text-[#2D332F] mb-4">
               معاً نبني
               <br />
               <span className="text-[#987239]">جسوراً</span> نحو النجاح
             </h1>
+            <p className="text-sm md:text-base tracking-[0.3em] text-[#987239] mb-8 uppercase">
+              مجلة دورية إلكترونية
+            </p>
             <p className="text-lg text-[#5C6660] leading-loose max-w-xl mb-10">
               منصّةُ تواصلٍ بين البيت والمدرسة، نحتفي فيها بإنجازات بناتنا،
               ونُنصت لمقترحات أولياء الأمور، ونزرع وعياً يليق بأجيال الغد.
@@ -132,6 +135,9 @@ const Home = () => {
                 </p>
               </div>
             )}
+            <p className="mt-6 text-center text-xs tracking-[0.35em] text-[#987239] uppercase">
+              مجلة دورية إلكترونية
+            </p>
           </div>
         </div>
       </section>
