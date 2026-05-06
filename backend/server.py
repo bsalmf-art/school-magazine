@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,6 +15,12 @@ from datetime import datetime, timezone
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Uploads directory (served via /api/uploads/{filename})
+UPLOADS_DIR = ROOT_DIR / 'uploads'
+UPLOADS_DIR.mkdir(exist_ok=True)
+ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -69,10 +76,11 @@ class ArticleCreate(BaseModel):
 
 
 class PublicPostCreate(BaseModel):
-    """Public submission for the 'voice' section (parents writing topics)."""
+    """Public submission for any section (parents writing topics)."""
     title: str
     content: str
     author: Optional[str] = "ولي أمر"
+    image_url: Optional[str] = ""
 
 
 class ArticleUpdate(BaseModel):
@@ -252,7 +260,7 @@ async def create_section_post(section: str, payload: PublicPostCreate):
         excerpt=excerpt,
         content=content,
         section=section,
-        image_url="",
+        image_url=(payload.image_url or "").strip(),
         author=(payload.author or "ولي أمر").strip() or "ولي أمر",
         featured=False,
     )
@@ -264,6 +272,36 @@ async def create_section_post(section: str, payload: PublicPostCreate):
 @api_router.post("/voice/posts", response_model=Article)
 async def create_voice_post(payload: PublicPostCreate):
     return await create_section_post("voice", payload)
+
+
+# --- Image uploads (public) ---
+class UploadResponse(BaseModel):
+    url: str
+    filename: str
+
+
+@api_router.post("/uploads", response_model=UploadResponse)
+async def upload_image(file: UploadFile = File(...)):
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in ALLOWED_IMAGE_EXT:
+        raise HTTPException(status_code=400, detail="نوع الصورة غير مدعوم")
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="حجم الصورة يتجاوز 5 ميغابايت")
+    fname = f"{uuid.uuid4().hex}{suffix}"
+    fpath = UPLOADS_DIR / fname
+    with open(fpath, "wb") as f:
+        f.write(contents)
+    return UploadResponse(url=f"/api/uploads/{fname}", filename=fname)
+
+
+@api_router.get("/uploads/{filename}")
+async def get_upload(filename: str):
+    safe = Path(filename).name
+    fpath = UPLOADS_DIR / safe
+    if not fpath.exists() or not fpath.is_file():
+        raise HTTPException(status_code=404, detail="غير موجود")
+    return FileResponse(fpath)
 
 
 # --- Suggestions (مقترحات أولياء الأمور) ---
