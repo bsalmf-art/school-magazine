@@ -31,6 +31,12 @@ ACTIVE_TOKENS: set = set()
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 
 # ============ MODELS ============
 ALLOWED_SECTIONS = {"awareness", "news", "excellence"}  # نحو طريق واعٍ / آخر الأخبار / بصمة تميز
@@ -342,12 +348,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 
 @app.on_event("shutdown")

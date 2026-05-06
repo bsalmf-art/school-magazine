@@ -477,6 +477,7 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setDialogOpen(false)}
+              type="button"
               className="btn-pill btn-outline"
               data-testid="form-cancel-button"
             >
