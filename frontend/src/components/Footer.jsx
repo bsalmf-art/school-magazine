@@ -54,8 +54,8 @@ const Footer = () => {
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-3">
               <MessageCircle size={16} className="text-[#C2A878]" />
-              <Link to="/suggestions" className="hover:text-[#D4A373]">
-                مقترحات أولياء الأمور
+              <Link to="/voice" className="hover:text-[#D4A373]">
+                صوتك مسموع
               </Link>
             </li>
             <li className="flex items-center gap-3">
@@ -66,12 +66,9 @@ const Footer = () => {
             </li>
             <li className="flex items-center gap-3">
               <Mail size={16} className="text-[#C2A878]" />
-              <a
-                href="mailto:editor@school.edu"
-                className="hover:text-[#D4A373]"
-              >
-                editor@school.edu
-              </a>
+              <Link to="/subscribe" className="hover:text-[#D4A373]">
+                اشترك في المجلة
+              </Link>
             </li>
           </ul>
         </div>

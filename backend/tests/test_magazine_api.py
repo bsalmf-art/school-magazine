@@ -1,7 +1,11 @@
-"""Backend API tests for Arabic Magazine app.
+"""Backend API tests for Arabic Magazine app (Iteration 2).
 
-Covers: root, articles CRUD + filters, admin auth, suggestions, opinions,
-and validation that MongoDB `_id` never leaks.
+Covers:
+- root, articles CRUD + filters (DB is empty by default, no seed)
+- admin auth, suggestions (opinions legacy endpoint still present)
+- NEW: subscriptions (POST public, GET/DELETE admin, dup email, invalid email)
+- NEW: reactions (GET list of 5, POST increment, POST decrement with floor 0, 400 on invalid key)
+- Validation that MongoDB `_id` never leaks.
 """
 import os
 import pytest
@@ -12,6 +16,8 @@ API = f"{BASE_URL}/api"
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "School2025!"
+
+REACTION_KEYS = ["love", "inspired", "useful", "partnership", "innovative"]
 
 
 @pytest.fixture(scope="session")
@@ -41,50 +47,25 @@ class TestRoot:
         assert r.status_code == 200
         data = r.json()
         assert data.get("status") == "ok"
-        assert "معاً" in data.get("message", "") or "النجاح" in data.get("message", "")
 
 
-# ---------- Articles (public GET) ----------
+# ---------- Articles public (DB empty by default) ----------
 class TestArticlesPublic:
-    def test_list_all_seeded(self, client):
+    def test_list_all(self, client):
         r = client.get(f"{API}/articles")
         assert r.status_code == 200
         arr = r.json()
         assert isinstance(arr, list)
-        assert len(arr) >= 6, f"Expected >=6 seeded, got {len(arr)}"
         for a in arr:
             assert "_id" not in a
-            assert "id" in a and "title" in a and "section" in a
-
-    @pytest.mark.parametrize("section", ["awareness", "news", "excellence"])
-    def test_filter_by_section(self, client, section):
-        r = client.get(f"{API}/articles", params={"section": section})
-        assert r.status_code == 200
-        arr = r.json()
-        assert len(arr) >= 1
-        assert all(a["section"] == section for a in arr)
 
     def test_invalid_section(self, client):
         r = client.get(f"{API}/articles", params={"section": "bad"})
         assert r.status_code == 400
 
-    def test_filter_featured(self, client):
-        r = client.get(f"{API}/articles", params={"featured": "true"})
-        assert r.status_code == 200
-        arr = r.json()
-        assert len(arr) >= 1
-        assert all(a["featured"] is True for a in arr)
-
-    def test_get_single_and_404(self, client):
-        lst = client.get(f"{API}/articles").json()
-        aid = lst[0]["id"]
-        r = client.get(f"{API}/articles/{aid}")
-        assert r.status_code == 200
-        assert r.json()["id"] == aid
-        assert "_id" not in r.json()
-
-        r2 = client.get(f"{API}/articles/does-not-exist-xyz")
-        assert r2.status_code == 404
+    def test_get_single_404(self, client):
+        r = client.get(f"{API}/articles/does-not-exist-xyz")
+        assert r.status_code == 404
 
 
 # ---------- Admin Auth ----------
@@ -135,31 +116,25 @@ class TestArticlesAdmin:
         assert "_id" not in art
         aid = art["id"]
 
-        # Verify persistence via GET
         g = client.get(f"{API}/articles/{aid}")
         assert g.status_code == 200
         assert g.json()["title"] == payload["title"]
 
-        # Update
         u = client.put(f"{API}/articles/{aid}", json={"title": "TEST_updated", "featured": True}, headers=auth_headers)
         assert u.status_code == 200
         assert u.json()["title"] == "TEST_updated"
         assert u.json()["featured"] is True
 
-        # Verify update
         g2 = client.get(f"{API}/articles/{aid}").json()
         assert g2["title"] == "TEST_updated"
         assert g2["featured"] is True
 
-        # Invalid section update
         bad = client.put(f"{API}/articles/{aid}", json={"section": "bad"}, headers=auth_headers)
         assert bad.status_code == 400
 
-        # Delete
         d = client.delete(f"{API}/articles/{aid}", headers=auth_headers)
         assert d.status_code == 200
 
-        # Verify 404
         g3 = client.get(f"{API}/articles/{aid}")
         assert g3.status_code == 404
 
@@ -171,7 +146,7 @@ class TestArticlesAdmin:
         assert r.status_code == 400
 
 
-# ---------- Suggestions ----------
+# ---------- Suggestions (public POST, admin GET/DELETE) ----------
 class TestSuggestions:
     def test_create_public(self, client):
         r = client.post(f"{API}/suggestions", json={
@@ -188,46 +163,173 @@ class TestSuggestions:
         r = client.get(f"{API}/suggestions")
         assert r.status_code == 401
 
-    def test_list_admin(self, client, auth_headers):
+    def test_list_admin_and_cleanup(self, client, auth_headers):
         r = client.get(f"{API}/suggestions", headers=auth_headers)
         assert r.status_code == 200
         arr = r.json()
         assert isinstance(arr, list)
         assert all("_id" not in s for s in arr)
-        # Cleanup TEST_ entries
         for s in arr:
             if s.get("parent_name", "").startswith("TEST_"):
                 client.delete(f"{API}/suggestions/{s['id']}", headers=auth_headers)
 
 
-# ---------- Opinions ----------
-class TestOpinions:
+# ---------- Subscriptions ----------
+class TestSubscriptions:
     def test_create_valid(self, client):
-        r = client.post(f"{API}/opinions", json={
+        r = client.post(f"{API}/subscriptions", json={
             "name": "TEST_أم",
+            "email": "test_subscriber_001@example.com"
+        })
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "_id" not in data
+        assert data["email"] == "test_subscriber_001@example.com"
+        assert data["name"] == "TEST_أم"
+        assert "id" in data
+
+    def test_duplicate_email_returns_existing(self, client):
+        email = "test_dup_subscriber@example.com"
+        r1 = client.post(f"{API}/subscriptions", json={"name": "TEST_first", "email": email})
+        assert r1.status_code == 200
+        id1 = r1.json()["id"]
+
+        r2 = client.post(f"{API}/subscriptions", json={"name": "TEST_second", "email": email})
+        assert r2.status_code == 200
+        # Should return the existing record (same id)
+        assert r2.json()["id"] == id1
+        assert r2.json()["email"] == email
+
+    def test_email_case_insensitive(self, client):
+        r1 = client.post(f"{API}/subscriptions", json={"email": "TEST_Case@Example.COM"})
+        assert r1.status_code == 200
+        # Email should be lowercased
+        assert r1.json()["email"] == "test_case@example.com"
+
+    @pytest.mark.parametrize("bad_email", ["", "notanemail", "a@b", "no-at-sign.com"])
+    def test_invalid_email(self, client, bad_email):
+        r = client.post(f"{API}/subscriptions", json={"email": bad_email})
+        assert r.status_code == 400, f"Expected 400 for {bad_email!r}, got {r.status_code}"
+
+    def test_list_requires_admin(self, client):
+        r = client.get(f"{API}/subscriptions")
+        assert r.status_code == 401
+
+    def test_list_admin_no_id_leak(self, client, auth_headers):
+        r = client.get(f"{API}/subscriptions", headers=auth_headers)
+        assert r.status_code == 200
+        arr = r.json()
+        assert isinstance(arr, list)
+        assert all("_id" not in s for s in arr)
+        assert all("id" in s and "email" in s for s in arr)
+
+    def test_delete_requires_admin(self, client):
+        r = client.delete(f"{API}/subscriptions/some-id")
+        assert r.status_code == 401
+
+    def test_delete_invalid_id_404(self, client, auth_headers):
+        r = client.delete(f"{API}/subscriptions/does-not-exist-xyz", headers=auth_headers)
+        assert r.status_code == 404
+
+    def test_delete_and_cleanup(self, client, auth_headers):
+        # Cleanup all TEST_ subscriptions created by test suite
+        lst = client.get(f"{API}/subscriptions", headers=auth_headers).json()
+        deleted_any = False
+        for s in lst:
+            email = s.get("email", "")
+            if email.startswith("test_") or "test_" in email:
+                r = client.delete(f"{API}/subscriptions/{s['id']}", headers=auth_headers)
+                assert r.status_code == 200
+                deleted_any = True
+        # At least one of our test subs should have been deletable
+        assert deleted_any, "Expected to delete at least one test subscription"
+
+
+# ---------- Reactions ----------
+class TestReactions:
+    def test_list_returns_five(self, client):
+        r = client.get(f"{API}/reactions")
+        assert r.status_code == 200
+        arr = r.json()
+        assert isinstance(arr, list)
+        keys = [item["key"] for item in arr]
+        assert sorted(keys) == sorted(REACTION_KEYS)
+        for item in arr:
+            assert "label" in item and isinstance(item["label"], str) and item["label"]
+            assert "count" in item and isinstance(item["count"], int)
+            assert item["count"] >= 0
+
+    def test_increment_love(self, client):
+        before = client.get(f"{API}/reactions").json()
+        before_love = next(x["count"] for x in before if x["key"] == "love")
+
+        r = client.post(f"{API}/reactions/love")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["key"] == "love"
+        assert data["count"] == before_love + 1
+
+        # Verify via GET
+        after = client.get(f"{API}/reactions").json()
+        after_love = next(x["count"] for x in after if x["key"] == "love")
+        assert after_love == before_love + 1
+
+    def test_decrement_love(self, client):
+        # First ensure count >= 1 by incrementing
+        client.post(f"{API}/reactions/love")
+        before = client.get(f"{API}/reactions").json()
+        before_love = next(x["count"] for x in before if x["key"] == "love")
+        assert before_love >= 1
+
+        r = client.post(f"{API}/reactions/love/decrement")
+        assert r.status_code == 200
+        assert r.json()["count"] == before_love - 1
+
+    def test_decrement_never_below_zero(self, client, auth_headers):
+        # Use a reaction key and decrement many times — never below 0
+        # We can't reset directly; just call decrement repeatedly and confirm never negative
+        for _ in range(50):
+            r = client.post(f"{API}/reactions/innovative/decrement")
+            assert r.status_code == 200
+            assert r.json()["count"] >= 0
+
+        # Final check via GET
+        arr = client.get(f"{API}/reactions").json()
+        innov = next(x["count"] for x in arr if x["key"] == "innovative")
+        assert innov >= 0
+
+    def test_invalid_key_increment(self, client):
+        r = client.post(f"{API}/reactions/invalidkey")
+        assert r.status_code == 400
+
+    def test_invalid_key_decrement(self, client):
+        r = client.post(f"{API}/reactions/invalidkey/decrement")
+        assert r.status_code == 400
+
+    def test_no_id_leak(self, client):
+        r = client.get(f"{API}/reactions")
+        assert r.status_code == 200
+        for item in r.json():
+            assert "_id" not in item
+
+
+# ---------- Opinions (legacy — endpoints still present, verify they don't break) ----------
+class TestOpinionsLegacy:
+    def test_create_legacy_still_works(self, client):
+        r = client.post(f"{API}/opinions", json={
+            "name": "TEST_legacy",
             "rating": 5,
-            "message": "TEST opinion"
+            "message": "TEST legacy opinion"
         })
         assert r.status_code == 200
-        assert r.json()["rating"] == 5
-        assert "_id" not in r.json()
-
-    @pytest.mark.parametrize("rating", [0, 6, -1, 10])
-    def test_rating_out_of_range(self, client, rating):
-        r = client.post(f"{API}/opinions", json={
-            "name": "x", "rating": rating, "message": "m"
-        })
-        assert r.status_code == 400
 
     def test_list_requires_admin(self, client):
         r = client.get(f"{API}/opinions")
         assert r.status_code == 401
 
-    def test_list_admin_and_cleanup(self, client, auth_headers):
+    def test_cleanup_legacy(self, client, auth_headers):
         r = client.get(f"{API}/opinions", headers=auth_headers)
         assert r.status_code == 200
-        arr = r.json()
-        assert all("_id" not in o for o in arr)
-        for o in arr:
+        for o in r.json():
             if o.get("name", "").startswith("TEST_"):
                 client.delete(f"{API}/opinions/{o['id']}", headers=auth_headers)

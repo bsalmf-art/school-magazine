@@ -268,74 +268,97 @@ async def admin_me(_: bool = Depends(require_admin)):
     return {"username": ADMIN_USERNAME, "authenticated": True}
 
 
-# ============ STARTUP SEEDING ============
-SEED_ARTICLES = [
-    {
-        "title": "خطوات عملية نحو طريق واعٍ في تربية أبنائنا",
-        "excerpt": "كيف نُوجّه بناتنا نحو وعي حقيقي يجمع بين العلم والقيم والمسؤولية في زمن التحديات المتسارعة.",
-        "content": "في عالم يتسابق فيه التقنيات والمعلومات، تبرز الحاجة إلى بناء وعي متوازن لدى طالباتنا؛ وعيٌ لا يكتفي بالمعرفة النظرية بل يربطها بالقيم والسلوك اليومي.\n\nتبدأ الخطوة الأولى بالحوار المنفتح داخل البيت؛ حوارٌ يمنح الطالبة مساحة للتعبير دون خوف من الحكم، ويُرسّخ فيها ثقة بالنفس قادرة على التمييز بين الصحيح والخاطئ.\n\nالخطوة الثانية: غرس عادة القراءة الهادفة، واختيار محتوى رقمي يليق بعقل الطالبة ويثري تفكيرها.\n\nختاماً، الشراكة بين البيت والمدرسة هي الجسر الأصيل نحو طريق واعٍ؛ فحين يتكامل دور المعلمة مع ولي الأمر، تتكوّن شخصية متزنة قادرة على صناعة مستقبلها بثقة.",
-        "section": "awareness",
-        "image_url": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80",
-        "author": "أ. هدى العتيبي",
-        "featured": True,
-    },
-    {
-        "title": "فن الإصغاء: مهارة نمنحها لبناتنا قبل كل شيء",
-        "excerpt": "الإصغاء ليس صمتاً، بل حضورٌ كامل يُشعر الطالبة بأنها مسموعة ومقدّرة.",
-        "content": "تُشير الدراسات التربوية الحديثة إلى أن الطالبة التي تنشأ في بيئة تُصغي إليها تكون أكثر ثقةً واتزاناً في قراراتها المستقبلية.\n\nالإصغاء الفعّال يتطلّب أن نضع الهاتف جانباً، وننظر في عيني ابنتنا، ونمنحها وقتاً كافياً للتعبير. هذه اللحظات القصيرة تبني جسوراً دائمة من الثقة.\n\nفي المدرسة، نحرص على تدريب المعلمات على مهارات الإصغاء التفاعلي، لأننا نؤمن أن كل طالبة تحمل قصة تستحق أن تُروى، وصوتاً يستحق أن يُسمع.",
-        "section": "awareness",
-        "image_url": "https://images.unsplash.com/photo-1455390582262-044cdead27d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "author": "أ. منى القحطاني",
-        "featured": False,
-    },
-    {
-        "title": "انطلاق فعاليات الأسبوع الثقافي بحضور مميّز",
-        "excerpt": "شهدت المدرسة انطلاق فعاليات الأسبوع الثقافي بمشاركة واسعة من الطالبات وأولياء الأمور.",
-        "content": "في أجواء مفعمة بالحيوية، انطلقت صباح اليوم فعاليات الأسبوع الثقافي تحت شعار \"معرفة تُصنع، وهويّة تُصان\".\n\nتضمّن البرنامج ركناً تراثياً، وركناً للعلوم والابتكار، إضافة إلى أمسية شعرية قدّمتها طالبات الصف الثالث الثانوي.\n\nوقد أشادت إدارة المدرسة بالجهود المبذولة من اللجان الطلابية، وأكدت أن هذه الفعاليات تمثّل امتداداً طبيعياً لرسالة المدرسة في بناء شخصية متكاملة.",
-        "section": "news",
-        "image_url": "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "author": "هيئة التحرير",
-        "featured": True,
-    },
-    {
-        "title": "اجتماع مجلس الأمهات يناقش خطط الفصل القادم",
-        "excerpt": "عقد مجلس الأمهات اجتماعه الدوري لمناقشة الخطط التطويرية والبرامج المشتركة.",
-        "content": "في لقاء ودّي ومثمر، اجتمع مجلس الأمهات مع إدارة المدرسة لاستعراض خطط الفصل الدراسي القادم، ومناقشة المبادرات المجتمعية التي يمكن تنفيذها بشراكة حقيقية بين البيت والمدرسة.\n\nتم خلال اللقاء عرض عدد من المقترحات القيّمة التي قدّمتها الأمهات، وتم الاتفاق على تشكيل لجنة متابعة تضمن تحويل هذه الأفكار إلى واقع ملموس.\n\nنشكر لأولياء الأمور حضورهم وتفاعلهم، فحضوركم هو ما يصنع الفرق.",
-        "section": "news",
-        "image_url": "https://images.unsplash.com/photo-1543269865-cbf427effbad?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "author": "هيئة التحرير",
-        "featured": False,
-    },
-    {
-        "title": "بصمة تميّز: الطالبة لُجين تُمثّل المدرسة في الأولمبياد الوطني",
-        "excerpt": "إنجاز جديد يُضاف إلى سجل المدرسة بفوز الطالبة لُجين بالمركز الأول في أولمبياد الرياضيات.",
-        "content": "بخطوات واثقة وعقل نيّر، حصدت الطالبة لُجين محمد المركز الأول على مستوى المنطقة في أولمبياد الرياضيات الوطني، لتُضيف بذلك بصمة جديدة إلى سجل تميّز المدرسة.\n\nتقول لُجين: \"كانت الرحلة مليئة بالتحديات، لكن دعم معلماتي وأسرتي كان الوقود الذي أوصلني إلى هذا الإنجاز\".\n\nنبارك للطالبة ولأسرتها، ونسأل الله لها دوام التوفيق، فأنتِ قدوة لكل زميلاتك.",
-        "section": "excellence",
-        "image_url": "https://images.unsplash.com/photo-1532012197267-da84d127e765?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "author": "هيئة التحرير",
-        "featured": True,
-    },
-    {
-        "title": "بصمة تميّز: فريق \"إبداع\" يحصد جائزة المبادرات المجتمعية",
-        "excerpt": "فريق طالبات المدرسة يُتوَّج بجائزة أفضل مبادرة مجتمعية على مستوى المدارس.",
-        "content": "تمكّن فريق \"إبداع\" المكوّن من ثماني طالبات من مختلف الصفوف من الفوز بجائزة أفضل مبادرة مجتمعية لهذا العام، وذلك عن مشروعهن \"حديقة الأجيال\" الذي يربط بين كبار السن والطالبات في أنشطة أسبوعية مشتركة.\n\nالمبادرة تنقل رسالة عميقة: أن التعليم لا يتوقف عند حدود الفصل، بل يمتدّ إلى المجتمع ليزرع فيه أثراً دائماً.\n\nنحتفي بهذا الإنجاز، وندعو جميع الطالبات إلى الاقتداء بهذه الروح الإيجابية الخلّاقة.",
-        "section": "excellence",
-        "image_url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "author": "هيئة التحرير",
-        "featured": False,
-    },
-]
+# --- Subscriptions (الاشتراك في المجلة) ---
+class Subscription(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: Optional[str] = ""
+    email: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-@app.on_event("startup")
-async def seed_data():
-    existing = await db.articles.count_documents({})
-    if existing == 0:
-        logger.info("Seeding initial articles...")
-        for a in SEED_ARTICLES:
-            art = Article(**a)
-            await db.articles.insert_one(serialize_dt(art.model_dump()))
-        logger.info(f"Seeded {len(SEED_ARTICLES)} articles")
+class SubscriptionCreate(BaseModel):
+    name: Optional[str] = ""
+    email: str
+
+
+@api_router.post("/subscriptions", response_model=Subscription)
+async def create_subscription(payload: SubscriptionCreate):
+    email = payload.email.strip().lower()
+    if "@" not in email or "." not in email or len(email) < 5:
+        raise HTTPException(status_code=400, detail="بريد إلكتروني غير صالح")
+    existing = await db.subscriptions.find_one({"email": email}, {"_id": 0})
+    if existing:
+        return Subscription(**parse_dt(existing))
+    sub = Subscription(name=payload.name or "", email=email)
+    await db.subscriptions.insert_one(serialize_dt(sub.model_dump()))
+    return sub
+
+
+@api_router.get("/subscriptions", response_model=List[Subscription])
+async def list_subscriptions(_: bool = Depends(require_admin)):
+    docs = await db.subscriptions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [Subscription(**parse_dt(d)) for d in docs]
+
+
+@api_router.delete("/subscriptions/{sid}")
+async def delete_subscription(sid: str, _: bool = Depends(require_admin)):
+    result = await db.subscriptions.delete_one({"id": sid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="غير موجود")
+    return {"ok": True}
+
+
+# --- Reactions (رأيك يهمنا — أيقونات تفاعل) ---
+ALLOWED_REACTIONS = {
+    "love": "معجبة بالمحتوى",
+    "inspired": "ملهمة",
+    "useful": "مفيدة",
+    "partnership": "شراكة فعّالة",
+    "innovative": "فكرة جديدة",
+}
+
+
+class ReactionCount(BaseModel):
+    key: str
+    label: str
+    count: int
+
+
+@api_router.get("/reactions", response_model=List[ReactionCount])
+async def list_reactions():
+    docs = await db.reactions.find({}, {"_id": 0}).to_list(50)
+    counts_map = {d["key"]: d.get("count", 0) for d in docs}
+    return [
+        ReactionCount(key=k, label=v, count=counts_map.get(k, 0))
+        for k, v in ALLOWED_REACTIONS.items()
+    ]
+
+
+@api_router.post("/reactions/{key}", response_model=ReactionCount)
+async def add_reaction(key: str):
+    if key not in ALLOWED_REACTIONS:
+        raise HTTPException(status_code=400, detail="نوع تفاعل غير مدعوم")
+    await db.reactions.update_one(
+        {"key": key},
+        {"$inc": {"count": 1}, "$setOnInsert": {"label": ALLOWED_REACTIONS[key]}},
+        upsert=True,
+    )
+    doc = await db.reactions.find_one({"key": key}, {"_id": 0})
+    return ReactionCount(key=key, label=ALLOWED_REACTIONS[key], count=doc.get("count", 0))
+
+
+@api_router.post("/reactions/{key}/decrement", response_model=ReactionCount)
+async def remove_reaction(key: str):
+    """Allow user to undo their reaction (called when they click again client-side)."""
+    if key not in ALLOWED_REACTIONS:
+        raise HTTPException(status_code=400, detail="نوع تفاعل غير مدعوم")
+    doc = await db.reactions.find_one({"key": key}, {"_id": 0})
+    current = doc.get("count", 0) if doc else 0
+    if current > 0:
+        await db.reactions.update_one({"key": key}, {"$inc": {"count": -1}})
+        current -= 1
+    return ReactionCount(key=key, label=ALLOWED_REACTIONS[key], count=current)
 
 
 # Include router

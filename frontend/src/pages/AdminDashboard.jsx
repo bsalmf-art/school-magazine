@@ -22,7 +22,7 @@ import {
   SelectContent,
   SelectItem,
 } from "../components/ui/select";
-import { Trash2, Plus, Edit, LogOut, Star } from "lucide-react";
+import { Trash2, Plus, Edit, LogOut, Star, Mail } from "lucide-react";
 
 const empty = {
   title: "",
@@ -37,7 +37,8 @@ const empty = {
 const AdminDashboard = () => {
   const [articles, setArticles] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
-  const [opinions, setOpinions] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [reactions, setReactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,14 +49,16 @@ const AdminDashboard = () => {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [art, sug, opi] = await Promise.all([
+      const [art, sug, sub, rea] = await Promise.all([
         api.get("/articles"),
         api.get("/suggestions"),
-        api.get("/opinions"),
+        api.get("/subscriptions"),
+        api.get("/reactions"),
       ]);
       setArticles(art.data);
       setSuggestions(sug.data);
-      setOpinions(opi.data);
+      setSubscriptions(sub.data);
+      setReactions(rea.data);
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.removeItem("admin_token");
@@ -147,15 +150,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const deleteOpinion = async (id) => {
-    if (!window.confirm("حذف الرأي؟")) return;
+  const deleteSubscription = async (id) => {
+    if (!window.confirm("حذف هذا الاشتراك؟")) return;
     try {
-      await api.delete(`/opinions/${id}`);
+      await api.delete(`/subscriptions/${id}`);
       loadAll();
     } catch {
       toast.error("تعذّر الحذف");
     }
   };
+
+  const totalReactions = reactions.reduce((a, b) => a + b.count, 0);
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen" data-testid="admin-dashboard">
@@ -181,17 +186,20 @@ const AdminDashboard = () => {
 
         <Tabs defaultValue="articles" dir="rtl">
           <TabsList
-            className="bg-white border border-[#E2DAC8] mb-8"
+            className="bg-white border border-[#E2DAC8] mb-8 flex flex-wrap"
             data-testid="admin-tabs"
           >
             <TabsTrigger value="articles" data-testid="tab-articles">
               المقالات ({articles.length})
             </TabsTrigger>
             <TabsTrigger value="suggestions" data-testid="tab-suggestions">
-              الاقتراحات ({suggestions.length})
+              صوتك مسموع ({suggestions.length})
             </TabsTrigger>
-            <TabsTrigger value="opinions" data-testid="tab-opinions">
-              الآراء ({opinions.length})
+            <TabsTrigger value="subscriptions" data-testid="tab-subscriptions">
+              المُشتركات ({subscriptions.length})
+            </TabsTrigger>
+            <TabsTrigger value="reactions" data-testid="tab-reactions">
+              التفاعلات ({totalReactions})
             </TabsTrigger>
           </TabsList>
 
@@ -284,7 +292,7 @@ const AdminDashboard = () => {
           {/* Suggestions */}
           <TabsContent value="suggestions">
             <h2 className="font-display text-2xl text-[#2D332F] mb-6">
-              مقترحات أولياء الأمور
+              صوتك مسموع — مقترحات أولياء الأمور
             </h2>
             {suggestions.length === 0 ? (
               <p className="text-center text-[#5C6660] py-10">لا توجد اقتراحات.</p>
@@ -326,56 +334,104 @@ const AdminDashboard = () => {
             )}
           </TabsContent>
 
-          {/* Opinions */}
-          <TabsContent value="opinions">
+          {/* Subscriptions */}
+          <TabsContent value="subscriptions">
             <h2 className="font-display text-2xl text-[#2D332F] mb-6">
-              آراء القرّاء
+              قائمة المُشتركات في المجلة
             </h2>
-            {opinions.length === 0 ? (
+            {subscriptions.length === 0 ? (
               <p className="text-center text-[#5C6660] py-10">
-                لا توجد آراء بعد.
+                لا يوجد مُشتركات بعد.
               </p>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                {opinions.map((o) => (
-                  <div
-                    key={o.id}
-                    className="bg-white border border-[#E2DAC8] rounded-xl p-6"
-                    data-testid={`opinion-card-${o.id}`}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-semibold text-[#2D332F]">{o.name}</p>
-                        <div className="flex gap-1 mt-1">
-                          {[1, 2, 3, 4, 5].map((i) => (
-                            <Star
-                              key={i}
-                              size={14}
-                              className={
-                                i <= o.rating
-                                  ? "fill-[#D4A373] text-[#D4A373]"
-                                  : "text-[#E2DAC8]"
-                              }
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => deleteOpinion(o.id)}
-                        data-testid={`delete-opinion-${o.id}`}
-                        className="p-2 text-red-700 hover:bg-red-50 rounded-lg"
+              <div className="bg-white border border-[#E2DAC8] rounded-xl overflow-hidden">
+                <table className="w-full text-right">
+                  <thead className="bg-[#F0EBE1]">
+                    <tr className="text-sm text-[#2D332F]">
+                      <th className="px-4 py-3 font-semibold">الاسم</th>
+                      <th className="px-4 py-3 font-semibold">البريد الإلكتروني</th>
+                      <th className="px-4 py-3 font-semibold">تاريخ الاشتراك</th>
+                      <th className="px-4 py-3 font-semibold">إجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscriptions.map((s) => (
+                      <tr
+                        key={s.id}
+                        className="border-t border-[#E2DAC8] text-sm"
+                        data-testid={`subscription-row-${s.id}`}
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    <p className="text-[#3a3f3b] leading-loose">{o.message}</p>
-                    <p className="text-xs text-[#5C6660] mt-3">
-                      {new Date(o.created_at).toLocaleString("ar")}
-                    </p>
-                  </div>
-                ))}
+                        <td className="px-4 py-3 text-[#2D332F]">
+                          {s.name || <span className="text-[#5C6660]">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-[#5C6660] inline-flex items-center gap-2">
+                          <Mail size={14} />
+                          {s.email}
+                        </td>
+                        <td className="px-4 py-3 text-[#5C6660]">
+                          {new Date(s.created_at).toLocaleDateString("ar")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => deleteSubscription(s.id)}
+                            data-testid={`delete-subscription-${s.id}`}
+                            className="p-2 rounded-lg hover:bg-red-50 text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
+          </TabsContent>
+
+          {/* Reactions */}
+          <TabsContent value="reactions">
+            <h2 className="font-display text-2xl text-[#2D332F] mb-2">
+              تفاعلات القارئات (رأيك يهمنا)
+            </h2>
+            <p className="text-sm text-[#5C6660] mb-6">
+              مجموع التفاعلات:{" "}
+              <span className="font-bold text-[#2D332F]">{totalReactions}</span>
+            </p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {reactions.map((r) => {
+                const pct = totalReactions
+                  ? Math.round((r.count / totalReactions) * 100)
+                  : 0;
+                return (
+                  <div
+                    key={r.key}
+                    className="bg-white border border-[#E2DAC8] rounded-xl p-6"
+                    data-testid={`reaction-stat-${r.key}`}
+                  >
+                    <p className="text-xs tracking-[0.25em] text-[#987239] uppercase mb-2">
+                      {r.key}
+                    </p>
+                    <p className="font-display text-xl text-[#2D332F] mb-3">
+                      {r.label}
+                    </p>
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <span className="text-3xl font-bold text-[#2D332F]">
+                        {r.count}
+                      </span>
+                      <span className="text-sm text-[#5C6660]">
+                        تفاعل ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-[#F0EBE1] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#8B9D83] transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

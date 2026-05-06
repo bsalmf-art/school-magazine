@@ -2,7 +2,30 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api, { SECTIONS, SECTION_LABELS } from "../lib/api";
 import { ArticleCard } from "../components/ArticleCard";
-import { ArrowLeft, Sparkles, MessageCircle, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  Sparkles,
+  MessageCircle,
+  Mail,
+  ImageIcon,
+} from "lucide-react";
+
+const SectionPlaceholder = ({ section }) => (
+  <div
+    className="rounded-2xl border-2 border-dashed border-[#E2DAC8] bg-[#FAF8F5] p-10 lg:p-14 text-center"
+    data-testid={`section-empty-${section.key}`}
+  >
+    <div className="w-16 h-16 mx-auto rounded-full bg-[#F0EBE1] flex items-center justify-center mb-5">
+      <ImageIcon size={26} className="text-[#987239]" />
+    </div>
+    <p className="font-display text-2xl text-[#2D332F] mb-2">
+      محتوى هذا القسم قيد الإعداد
+    </p>
+    <p className="text-sm text-[#5C6660] max-w-md mx-auto leading-loose">
+      ستجدين هنا قريباً مقالات قسم «{section.label}» — {section.desc}.
+    </p>
+  </div>
+);
 
 const Home = () => {
   const [articles, setArticles] = useState([]);
@@ -54,24 +77,24 @@ const Home = () => {
                 className="btn-pill btn-primary"
                 data-testid="hero-cta-read"
               >
-                ابدأ القراءة
+                ابدأ التصفّح
                 <ArrowLeft size={16} className="rtl:rotate-180" />
               </Link>
               <Link
-                to="/suggestions"
+                to="/voice"
                 className="btn-pill btn-outline"
-                data-testid="hero-cta-suggest"
+                data-testid="hero-cta-voice"
               >
-                شاركنا اقتراحك
+                صوتك مسموع
               </Link>
             </div>
           </div>
 
-          {featuredCover && (
-            <div
-              className="lg:col-span-5 editorial-rise"
-              style={{ animationDelay: "120ms" }}
-            >
+          <div
+            className="lg:col-span-5 editorial-rise"
+            style={{ animationDelay: "120ms" }}
+          >
+            {featuredCover ? (
               <Link
                 to={`/articles/${featuredCover.id}`}
                 className="group block relative"
@@ -93,8 +116,23 @@ const Home = () => {
                   </p>
                 </div>
               </Link>
-            </div>
-          )}
+            ) : (
+              <div
+                className="relative h-[520px] rounded-2xl border-2 border-dashed border-[#C2A878] bg-[#FAF8F5] flex flex-col items-center justify-center p-10 text-center"
+                data-testid="hero-cover-placeholder"
+              >
+                <div className="w-20 h-20 rounded-full bg-[#F0EBE1] flex items-center justify-center mb-6">
+                  <ImageIcon size={32} className="text-[#987239]" />
+                </div>
+                <p className="font-display text-2xl text-[#2D332F] mb-3">
+                  غلاف العدد الأول
+                </p>
+                <p className="text-sm text-[#5C6660] max-w-xs leading-loose">
+                  سيظهر هنا غلاف العدد بعد إضافة أوّل مقال مميّز من لوحة الإدارة.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -119,7 +157,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* SECTION GRIDS */}
+      {/* SECTION GRIDS (always render, with placeholders if empty) */}
       {loading && (
         <div className="max-w-7xl mx-auto px-6 lg:px-10 py-24 text-center text-[#5C6660]">
           جارٍ تحميل المحتوى...
@@ -129,8 +167,6 @@ const Home = () => {
       {!loading &&
         SECTIONS.map((s, idx) => {
           const items = bySection(s.key);
-          if (items.length === 0) return null;
-          const isFeatured = idx === 0;
           return (
             <section
               key={s.key}
@@ -145,18 +181,23 @@ const Home = () => {
                   <h2 className="font-display text-4xl md:text-5xl text-[#2D332F]">
                     {s.label}
                   </h2>
+                  <p className="mt-3 text-[#5C6660] text-base">{s.desc}</p>
                 </div>
-                <Link
-                  to={`/section/${s.key}`}
-                  className="text-sm text-[#2D332F] hover:text-[#987239] inline-flex items-center gap-2"
-                  data-testid={`see-all-${s.key}`}
-                >
-                  جميع المقالات
-                  <ArrowLeft size={14} className="rtl:rotate-180" />
-                </Link>
+                {items.length > 0 && (
+                  <Link
+                    to={`/section/${s.key}`}
+                    className="text-sm text-[#2D332F] hover:text-[#987239] inline-flex items-center gap-2"
+                    data-testid={`see-all-${s.key}`}
+                  >
+                    جميع المقالات
+                    <ArrowLeft size={14} className="rtl:rotate-180" />
+                  </Link>
+                )}
               </div>
 
-              {isFeatured && items[0] ? (
+              {items.length === 0 ? (
+                <SectionPlaceholder section={s} />
+              ) : idx === 0 && items[0] ? (
                 <div className="space-y-16">
                   <ArticleCard article={items[0]} variant="feature" />
                   {items.length > 1 && (
@@ -178,44 +219,73 @@ const Home = () => {
           );
         })}
 
+      {/* CTA SUBSCRIBE BANNER */}
+      <section
+        className="max-w-7xl mx-auto px-6 lg:px-10 py-16"
+        data-testid="subscribe-banner"
+      >
+        <div className="rounded-2xl bg-[#2D332F] text-[#FAF8F5] p-10 lg:p-14 grid md:grid-cols-2 gap-10 items-center paper-grain relative overflow-hidden">
+          <div>
+            <Mail size={32} className="text-[#D4A373] mb-5" />
+            <h3 className="font-display text-3xl md:text-4xl mb-4">
+              لا يفوتكِ عددٌ جديد
+            </h3>
+            <p className="text-sm leading-loose opacity-90 max-w-md">
+              اشتركي ببريدكِ، ويصلكِ أوّلاً إشعارٌ عند صدور كلّ عدد، مع أهمّ
+              المقالات والتنبيهات من المدرسة.
+            </p>
+          </div>
+          <div className="flex md:justify-end">
+            <Link
+              to="/subscribe"
+              className="btn-pill bg-[#D4A373] text-[#2D332F] hover:bg-[#FAF8F5] hover:text-[#2D332F]"
+              data-testid="subscribe-banner-cta"
+            >
+              اشتركي الآن
+              <ArrowLeft size={16} className="rtl:rotate-180" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CALL-TO-ACTION CARDS */}
       <section
-        className="max-w-7xl mx-auto px-6 lg:px-10 py-20"
+        className="max-w-7xl mx-auto px-6 lg:px-10 py-12"
         data-testid="cta-section"
       >
         <div className="grid md:grid-cols-2 gap-8">
           <Link
-            to="/suggestions"
+            to="/voice"
             className="group relative overflow-hidden rounded-2xl bg-[#8B9D83] text-[#FAF8F5] p-10 transition-transform hover:-translate-y-1"
-            data-testid="cta-suggestions"
+            data-testid="cta-voice"
           >
             <Sparkles className="absolute top-6 left-6 opacity-30" size={80} />
             <MessageCircle size={28} className="mb-5" />
-            <h3 className="font-display text-3xl mb-3">مقترحات أولياء الأمور</h3>
+            <h3 className="font-display text-3xl mb-3">صوتك مسموع</h3>
             <p className="text-sm leading-loose opacity-90 mb-6 max-w-md">
-              صوتك جزء من قرارنا. شاركنا اقتراحك أو ملاحظتك، فنحن نُصغي بكلّ
-              اهتمام.
+              مقترحات أولياء الأمور — صوتك جزء من قرارنا. شاركينا اقتراحك أو
+              ملاحظتك، ونحن نُصغي بكلّ اهتمام.
             </p>
             <span className="inline-flex items-center gap-2 text-sm font-semibold border-b border-[#FAF8F5]/40 pb-1">
-              أرسل اقتراحك
+              أرسلي صوتك
               <ArrowLeft size={14} className="rtl:rotate-180" />
             </span>
           </Link>
 
           <Link
             to="/opinion"
-            className="group relative overflow-hidden rounded-2xl bg-[#2D332F] text-[#FAF8F5] p-10 transition-transform hover:-translate-y-1"
+            className="group relative overflow-hidden rounded-2xl bg-[#987239] text-[#FAF8F5] p-10 transition-transform hover:-translate-y-1"
             data-testid="cta-opinion"
           >
-            <Star className="absolute top-6 left-6 opacity-20" size={80} />
-            <Star size={28} className="mb-5" />
+            <Sparkles className="absolute top-6 left-6 opacity-20" size={80} />
+            <Sparkles size={28} className="mb-5" />
             <h3 className="font-display text-3xl mb-3">رأيك يهمنا</h3>
             <p className="text-sm leading-loose opacity-90 mb-6 max-w-md">
-              ساعدنا على تطوير المجلة بكلمة صادقة منك، وقيّم تجربتك معنا في
-              ثوانٍ.
+              تفاعلي مع المجلة بنقرةٍ واحدة عبر أيقونات تعبيرية تختصر انطباعك،
+              وشاهدي تفاعل بقيّة القارئات.
             </p>
             <span className="inline-flex items-center gap-2 text-sm font-semibold border-b border-[#FAF8F5]/40 pb-1">
-              شاركنا رأيك
+              صوّتي الآن
               <ArrowLeft size={14} className="rtl:rotate-180" />
             </span>
           </Link>

@@ -3,7 +3,7 @@ import api from "../lib/api";
 import { toast } from "sonner";
 import { Send, MessageCircle } from "lucide-react";
 
-const SuggestionsPage = () => {
+const VoicePage = () => {
   const [form, setForm] = useState({
     parent_name: "",
     student_name: "",
@@ -16,14 +16,18 @@ const SuggestionsPage = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!form.parent_name.trim() || !form.subject.trim() || !form.message.trim()) {
+    if (
+      !form.parent_name.trim() ||
+      !form.subject.trim() ||
+      !form.message.trim()
+    ) {
       toast.error("يرجى تعبئة الحقول المطلوبة");
       return;
     }
     setLoading(true);
     try {
       await api.post("/suggestions", form);
-      toast.success("تم إرسال اقتراحك بنجاح، شكراً لتواصلك معنا");
+      toast.success("تم إرسال صوتك بنجاح، شكراً لتواصلك معنا");
       setForm({ parent_name: "", student_name: "", subject: "", message: "" });
     } catch (err) {
       toast.error("حدث خطأ، حاول مرّة أخرى");
@@ -33,19 +37,17 @@ const SuggestionsPage = () => {
   };
 
   return (
-    <div data-testid="suggestions-page">
+    <div data-testid="voice-page">
       <header className="bg-[#8B9D83] text-[#FAF8F5] paper-grain">
         <div className="max-w-5xl mx-auto px-6 lg:px-10 py-20">
           <MessageCircle size={36} className="mb-6 opacity-80" />
           <p className="text-xs tracking-[0.4em] uppercase mb-3 opacity-80">
-            صوتكم في قلب القرار
-          </p>
-          <h1 className="font-display text-5xl md:text-6xl mb-5">
             مقترحات أولياء الأمور
-          </h1>
+          </p>
+          <h1 className="font-display text-5xl md:text-6xl mb-5">صوتك مسموع</h1>
           <p className="text-lg leading-loose opacity-90 max-w-2xl">
             نُؤمن أن الشراكة بين البيت والمدرسة هي الأساس. شاركنا اقتراحك أو
-            ملاحظتك، وسنناقشها بكلّ اهتمام.
+            ملاحظتك، وسنُصغي لكلّ كلمة بكلّ اهتمام.
           </p>
         </div>
       </header>
@@ -54,7 +56,7 @@ const SuggestionsPage = () => {
         <form
           onSubmit={onSubmit}
           className="space-y-6 bg-white border border-[#E2DAC8] rounded-2xl p-8 lg:p-10"
-          data-testid="suggestions-form"
+          data-testid="voice-form"
         >
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -65,7 +67,7 @@ const SuggestionsPage = () => {
                 type="text"
                 value={form.parent_name}
                 onChange={(e) => update("parent_name", e.target.value)}
-                data-testid="suggestion-parent-name"
+                data-testid="voice-parent-name"
                 className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none text-[#2D332F]"
                 placeholder="الاسم الكريم"
               />
@@ -78,7 +80,7 @@ const SuggestionsPage = () => {
                 type="text"
                 value={form.student_name}
                 onChange={(e) => update("student_name", e.target.value)}
-                data-testid="suggestion-student-name"
+                data-testid="voice-student-name"
                 className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none text-[#2D332F]"
                 placeholder="اسم ابنتك"
               />
@@ -93,7 +95,7 @@ const SuggestionsPage = () => {
               type="text"
               value={form.subject}
               onChange={(e) => update("subject", e.target.value)}
-              data-testid="suggestion-subject"
+              data-testid="voice-subject"
               className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none text-[#2D332F]"
               placeholder="عنوان مختصر يصف اقتراحك"
             />
@@ -107,7 +109,7 @@ const SuggestionsPage = () => {
               rows={7}
               value={form.message}
               onChange={(e) => update("message", e.target.value)}
-              data-testid="suggestion-message"
+              data-testid="voice-message"
               className="w-full px-4 py-3 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none text-[#2D332F] resize-none"
               placeholder="اكتب اقتراحك أو ملاحظتك بحرّية..."
             />
@@ -116,10 +118,10 @@ const SuggestionsPage = () => {
           <button
             type="submit"
             disabled={loading}
-            data-testid="suggestion-submit-button"
+            data-testid="voice-submit-button"
             className="btn-pill btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "جارٍ الإرسال..." : "إرسال الاقتراح"}
+            {loading ? "جارٍ الإرسال..." : "أرسل صوتك"}
             <Send size={16} />
           </button>
         </form>
@@ -133,4 +135,4 @@ const SuggestionsPage = () => {
   );
 };
 
-export default SuggestionsPage;
+export default VoicePage;
