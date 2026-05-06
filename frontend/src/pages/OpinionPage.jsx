@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../lib/api";
+import api, { PAGE_IMAGES } from "../lib/api";
 import { toast } from "sonner";
 import { Heart, Sparkles, BookOpen, Handshake, Lightbulb } from "lucide-react";
 
@@ -103,8 +103,14 @@ const OpinionPage = () => {
 
   return (
     <div data-testid="opinion-page">
-      <header className="bg-[#2D332F] text-[#FAF8F5] paper-grain">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 py-20">
+      <header className="relative bg-[#2D332F] text-[#FAF8F5] paper-grain overflow-hidden">
+        <img
+          src={PAGE_IMAGES.opinion}
+          alt="رأيك يهمنا"
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-l from-[#2D332F]/90 via-[#2D332F]/70 to-[#2D332F]/95" />
+        <div className="relative max-w-5xl mx-auto px-6 lg:px-10 py-20">
           <Sparkles size={36} className="mb-6 text-[#D4A373]" />
           <p className="text-xs tracking-[0.4em] uppercase mb-3 text-[#C2A878]">
             رأيك يصنع الفرق

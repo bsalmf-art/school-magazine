@@ -39,7 +39,9 @@ logger = logging.getLogger(__name__)
 
 
 # ============ MODELS ============
-ALLOWED_SECTIONS = {"awareness", "news", "excellence"}  # نحو طريق واعٍ / آخر الأخبار / بصمة تميز
+# نحو طريق واعٍ / آخر الأخبار / بصمة تميز / صوتك مسموع
+ALLOWED_SECTIONS = {"awareness", "news", "excellence", "voice"}
+PUBLIC_POST_SECTIONS = {"voice"}  # sections where the public can create posts
 
 
 class Article(BaseModel):
@@ -48,10 +50,11 @@ class Article(BaseModel):
     title: str
     excerpt: str
     content: str
-    section: str  # awareness | news | excellence
-    image_url: str
+    section: str  # awareness | news | excellence | voice
+    image_url: str = ""
     author: str = "هيئة التحرير"
     featured: bool = False
+    likes: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -60,9 +63,16 @@ class ArticleCreate(BaseModel):
     excerpt: str
     content: str
     section: str
-    image_url: str
+    image_url: Optional[str] = ""
     author: Optional[str] = "هيئة التحرير"
     featured: Optional[bool] = False
+
+
+class PublicPostCreate(BaseModel):
+    """Public submission for the 'voice' section (parents writing topics)."""
+    title: str
+    content: str
+    author: Optional[str] = "ولي أمر"
 
 
 class ArticleUpdate(BaseModel):
@@ -197,6 +207,55 @@ async def delete_article(article_id: str, _: bool = Depends(require_admin)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="المقال غير موجود")
     return {"ok": True}
+
+
+# --- Article likes (per-article reactions) ---
+class LikeResponse(BaseModel):
+    id: str
+    likes: int
+
+
+@api_router.post("/articles/{article_id}/like", response_model=LikeResponse)
+async def like_article(article_id: str):
+    doc = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="المقال غير موجود")
+    await db.articles.update_one({"id": article_id}, {"$inc": {"likes": 1}})
+    new_count = (doc.get("likes", 0) or 0) + 1
+    return LikeResponse(id=article_id, likes=new_count)
+
+
+@api_router.post("/articles/{article_id}/unlike", response_model=LikeResponse)
+async def unlike_article(article_id: str):
+    doc = await db.articles.find_one({"id": article_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="المقال غير موجود")
+    current = doc.get("likes", 0) or 0
+    if current > 0:
+        await db.articles.update_one({"id": article_id}, {"$inc": {"likes": -1}})
+        current -= 1
+    return LikeResponse(id=article_id, likes=current)
+
+
+# --- Public posts (open submission for the 'voice' section) ---
+@api_router.post("/voice/posts", response_model=Article)
+async def create_voice_post(payload: PublicPostCreate):
+    title = payload.title.strip()
+    content = payload.content.strip()
+    if len(title) < 3 or len(content) < 5:
+        raise HTTPException(status_code=400, detail="العنوان والمحتوى مطلوبان")
+    excerpt = (content[:160] + "...") if len(content) > 160 else content
+    article = Article(
+        title=title,
+        excerpt=excerpt,
+        content=content,
+        section="voice",
+        image_url="",
+        author=(payload.author or "ولي أمر").strip() or "ولي أمر",
+        featured=False,
+    )
+    await db.articles.insert_one(serialize_dt(article.model_dump()))
+    return article
 
 
 # --- Suggestions (مقترحات أولياء الأمور) ---

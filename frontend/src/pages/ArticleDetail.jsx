@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api, { SECTION_LABELS } from "../lib/api";
 import { ArrowLeft, Calendar, User } from "lucide-react";
+import { LikeButton } from "../components/ArticleCard";
 
 const ArticleDetail = () => {
   const { id } = useParams();
@@ -91,24 +92,37 @@ const ArticleDetail = () => {
         </div>
       </header>
 
-      {/* Image */}
-      <div className="max-w-5xl mx-auto px-6 lg:px-10 mb-12">
-        <img
-          src={article.image_url}
-          alt={article.title}
-          className="w-full h-[500px] object-cover rounded-xl"
-        />
-      </div>
+      {/* Image (only render if provided) */}
+      {article.image_url && (
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 mb-12">
+          <img
+            src={article.image_url}
+            alt={article.title}
+            className="w-full h-[500px] object-cover rounded-xl"
+          />
+        </div>
+      )}
 
       {/* Body */}
-      <div className="max-w-3xl mx-auto px-6 lg:px-10 pb-20">
+      <div className="max-w-3xl mx-auto px-6 lg:px-10 pb-10">
         <div className="article-prose">
           {article.content.split("\n").map((p, i) =>
             p.trim() ? <p key={i}>{p}</p> : null
           )}
         </div>
 
-        <div className="mt-16 flex justify-between items-center border-t border-[#E2DAC8] pt-8">
+        <div className="mt-12 flex flex-col items-center gap-3 border-y border-[#E2DAC8] py-8">
+          <p className="text-xs tracking-[0.3em] text-[#987239] uppercase">
+            هل أعجبكِ هذا الموضوع؟
+          </p>
+          <LikeButton
+            articleId={article.id}
+            initialLikes={article.likes || 0}
+            size="large"
+          />
+        </div>
+
+        <div className="mt-10 flex justify-between items-center">
           <Link
             to={`/section/${article.section}`}
             className="inline-flex items-center gap-2 text-sm text-[#2D332F] hover:text-[#987239]"

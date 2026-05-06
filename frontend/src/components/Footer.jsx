@@ -54,7 +54,7 @@ const Footer = () => {
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-3">
               <MessageCircle size={16} className="text-[#C2A878]" />
-              <Link to="/voice" className="hover:text-[#D4A373]">
+              <Link to="/section/voice" className="hover:text-[#D4A373]">
                 صوتك مسموع
               </Link>
             </li>

@@ -10,7 +10,6 @@ const Navbar = () => {
   const navItems = [
     { to: "/", label: "الرئيسية" },
     ...SECTIONS.map((s) => ({ to: `/section/${s.key}`, label: s.label })),
-    { to: "/voice", label: "صوتك مسموع" },
     { to: "/opinion", label: "رأيك يهمنا" },
     { to: "/subscribe", label: "اشترك" },
   ];

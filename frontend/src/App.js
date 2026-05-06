@@ -7,7 +7,6 @@ import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import ArticleDetail from "@/pages/ArticleDetail";
 import SectionPage from "@/pages/SectionPage";
-import VoicePage from "@/pages/VoicePage";
 import OpinionPage from "@/pages/OpinionPage";
 import SubscribePage from "@/pages/SubscribePage";
 import AdminLogin from "@/pages/AdminLogin";
@@ -23,8 +22,8 @@ const Shell = () => {
           <Route path="/" element={<Home />} />
           <Route path="/articles/:id" element={<ArticleDetail />} />
           <Route path="/section/:section" element={<SectionPage />} />
-          <Route path="/voice" element={<VoicePage />} />
-          <Route path="/suggestions" element={<Navigate to="/voice" replace />} />
+          <Route path="/voice" element={<Navigate to="/section/voice" replace />} />
+          <Route path="/suggestions" element={<Navigate to="/section/voice" replace />} />
           <Route path="/opinion" element={<OpinionPage />} />
           <Route path="/subscribe" element={<SubscribePage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
