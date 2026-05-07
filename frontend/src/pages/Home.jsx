@@ -131,10 +131,7 @@ const Home = () => {
                   )}
                 </div>
                 <div className="absolute -bottom-8 -start-4 lg:-start-8 max-w-xs bg-[#FAF8F5] border border-[#E2DAC8] rounded-xl p-5 shadow-sm">
-                  <span className="text-[11px] tracking-[0.3em] text-[#987239] uppercase">
-                    افتتاحية العدد
-                  </span>
-                  <p className="font-display text-xl text-[#2D332F] mt-2 leading-snug group-hover:text-[#987239] transition-colors">
+                  <p className="font-display text-xl text-[#2D332F] leading-snug group-hover:text-[#987239] transition-colors">
                     {featuredCover.title}
                   </p>
                 </div>
@@ -151,10 +148,7 @@ const Home = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#2D332F]/85 via-[#2D332F]/30 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-8 text-[#FAF8F5]">
-                  <span className="text-[11px] tracking-[0.35em] text-[#D4A373] uppercase">
-                    افتتاحية العدد
-                  </span>
-                  <p className="font-display text-2xl mt-2 leading-snug">
+                  <p className="font-display text-2xl leading-snug">
                     جسورُ الثقة بين البيت والمدرسة
                   </p>
                   <p className="text-sm opacity-90 mt-2 leading-loose">
