@@ -7,7 +7,7 @@ import api, {
 } from "../lib/api";
 import { ArticleCard } from "../components/ArticleCard";
 import { toast } from "sonner";
-import { Send, Plus, ImagePlus, Smile, X } from "lucide-react";
+import { Send, Plus, ImagePlus, Smile, X, Video, Link2 } from "lucide-react";
 
 const EMOJIS = [
   "💛", "🌟", "✨", "📚", "🌸", "🌷", "🌿", "💐", "🌼", "🌹",
@@ -20,23 +20,31 @@ const PostForm = ({ section, onCreated }) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ author: "", title: "", content: "" });
   const [imageUrl, setImageUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [showLinkInput, setShowLinkInput] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [busy, setBusy] = useState(false);
-  const fileRef = useRef(null);
+  const imageRef = useRef(null);
+  const videoRef = useRef(null);
   const contentRef = useRef(null);
 
   const reset = () => {
     setForm({ author: "", title: "", content: "" });
     setImageUrl("");
+    setVideoUrl("");
+    setLinkUrl("");
     setShowEmoji(false);
+    setShowLinkInput(false);
   };
 
-  const onUpload = async (e) => {
+  const onUpload = async (e, kind) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("الحجم الأقصى للصورة 5 ميغابايت");
+    const max = kind === "video" ? 50 : 5;
+    if (file.size > max * 1024 * 1024) {
+      toast.error(`الحجم الأقصى ${max} ميغابايت`);
       return;
     }
     setUploading(true);
@@ -47,13 +55,19 @@ const PostForm = ({ section, onCreated }) => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const fullUrl = process.env.REACT_APP_BACKEND_URL + res.data.url;
-      setImageUrl(fullUrl);
-      toast.success("تم رفع الصورة");
+      if (kind === "video") {
+        setVideoUrl(fullUrl);
+        toast.success("تم رفع الفيديو");
+      } else {
+        setImageUrl(fullUrl);
+        toast.success("تم رفع الصورة");
+      }
     } catch (err) {
-      toast.error("تعذّر رفع الصورة");
+      toast.error("تعذّر رفع الملف");
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
+      if (kind === "video" && videoRef.current) videoRef.current.value = "";
+      if (kind === "image" && imageRef.current) imageRef.current.value = "";
     }
   };
 
@@ -87,6 +101,8 @@ const PostForm = ({ section, onCreated }) => {
         content: form.content.trim(),
         author: form.author.trim() || "ولي أمر",
         image_url: imageUrl || "",
+        video_url: videoUrl || "",
+        link_url: linkUrl.trim() || "",
       });
       toast.success("تم نشر المشاركة");
       reset();
@@ -200,7 +216,7 @@ const PostForm = ({ section, onCreated }) => {
 
       {/* Image preview */}
       {imageUrl && (
-        <div className="relative inline-block" data-testid="image-preview">
+        <div className="relative inline-block me-3" data-testid="image-preview">
           <img
             src={imageUrl}
             alt="معاينة"
@@ -218,25 +234,98 @@ const PostForm = ({ section, onCreated }) => {
         </div>
       )}
 
+      {/* Video preview */}
+      {videoUrl && (
+        <div className="relative inline-block me-3" data-testid="video-preview">
+          <video
+            src={videoUrl}
+            controls
+            className="h-32 w-56 object-cover rounded-lg border border-[#E2DAC8] bg-black"
+          />
+          <button
+            type="button"
+            onClick={() => setVideoUrl("")}
+            className="absolute -top-2 -end-2 w-7 h-7 bg-[#2D332F] text-[#FAF8F5] rounded-full flex items-center justify-center"
+            data-testid="remove-video"
+            aria-label="إزالة الفيديو"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Link input */}
+      {showLinkInput && (
+        <div className="flex items-center gap-2" data-testid="link-input-row">
+          <Link2 size={16} className="text-[#987239] shrink-0" />
+          <input
+            type="url"
+            placeholder="https://..."
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            data-testid="link-input"
+            className="flex-1 px-4 py-2 rounded-lg bg-[#FAF8F5] border border-[#E2DAC8] focus:border-[#8B9D83] focus:ring-2 focus:ring-[#8B9D83]/20 outline-none text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setLinkUrl("");
+              setShowLinkInput(false);
+            }}
+            className="text-[#5C6660] hover:text-[#2D332F] p-1"
+            aria-label="إزالة الرابط"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[#E2DAC8]">
         <input
-          ref={fileRef}
+          ref={imageRef}
           type="file"
           accept="image/*"
-          onChange={onUpload}
+          onChange={(e) => onUpload(e, "image")}
           className="hidden"
           data-testid="image-input"
         />
+        <input
+          ref={videoRef}
+          type="file"
+          accept="video/*"
+          onChange={(e) => onUpload(e, "video")}
+          className="hidden"
+          data-testid="video-input"
+        />
         <button
           type="button"
-          onClick={() => fileRef.current?.click()}
+          onClick={() => imageRef.current?.click()}
           disabled={uploading}
           data-testid="add-image-button"
           className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-[#E2DAC8] hover:bg-[#F0EBE1] text-[#2D332F] disabled:opacity-50"
         >
           <ImagePlus size={16} className="text-[#987239]" />
-          {uploading ? "جارٍ الرفع..." : "صورة"}
+          صورة
+        </button>
+        <button
+          type="button"
+          onClick={() => videoRef.current?.click()}
+          disabled={uploading}
+          data-testid="add-video-button"
+          className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-[#E2DAC8] hover:bg-[#F0EBE1] text-[#2D332F] disabled:opacity-50"
+        >
+          <Video size={16} className="text-[#987239]" />
+          فيديو
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLinkInput(!showLinkInput)}
+          data-testid="add-link-button"
+          className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-[#E2DAC8] hover:bg-[#F0EBE1] text-[#2D332F]"
+        >
+          <Link2 size={16} className="text-[#987239]" />
+          رابط
         </button>
         <button
           type="button"
@@ -247,9 +336,12 @@ const PostForm = ({ section, onCreated }) => {
           <Smile size={16} className="text-[#987239]" />
           إيموجي
         </button>
+        {uploading && (
+          <span className="text-xs text-[#5C6660]">جارٍ الرفع...</span>
+        )}
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || uploading}
           data-testid="submit-post"
           className="btn-pill btn-primary disabled:opacity-50 ms-auto"
         >
@@ -300,9 +392,6 @@ const SectionPage = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-l from-[#2D332F]/85 via-[#2D332F]/55 to-[#2D332F]/85" />
         <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-24 text-[#FAF8F5]">
-          <p className="text-xs tracking-[0.4em] text-[#D4A373] uppercase mb-4">
-            قسم
-          </p>
           <h1 className="font-display text-5xl md:text-6xl">
             {SECTION_LABELS[section]}
           </h1>

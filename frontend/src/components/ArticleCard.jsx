@@ -163,7 +163,33 @@ export const ArticleCard = ({ article, variant = "default", index = 0 }) => {
             {article.excerpt}
           </p>
         </Link>
-        <div className="flex items-center justify-between border-t border-[#E2DAC8] pt-3 mt-3">
+        {article.image_url && (
+          <img
+            src={article.image_url}
+            alt=""
+            className="w-full h-44 object-cover rounded-lg mb-3"
+          />
+        )}
+        {article.video_url && (
+          <video
+            src={article.video_url}
+            controls
+            className="w-full h-44 object-cover rounded-lg mb-3 bg-black"
+          />
+        )}
+        {article.link_url && (
+          <a
+            href={article.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="block text-xs text-[#987239] hover:text-[#2D332F] mb-3 truncate border-b border-[#E2DAC8] pb-2"
+            data-testid={`voice-link-${article.id}`}
+          >
+            🔗 {article.link_url}
+          </a>
+        )}
+        <div className="flex items-center justify-between border-t border-[#E2DAC8] pt-3">
           <LikeButton
             articleId={article.id}
             initialLikes={article.likes || 0}

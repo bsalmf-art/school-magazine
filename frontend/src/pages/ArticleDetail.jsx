@@ -103,6 +103,32 @@ const ArticleDetail = () => {
         </div>
       )}
 
+      {/* Video (only render if provided) */}
+      {article.video_url && (
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 mb-12">
+          <video
+            src={article.video_url}
+            controls
+            className="w-full max-h-[600px] rounded-xl bg-black"
+          />
+        </div>
+      )}
+
+      {/* External link (if provided) */}
+      {article.link_url && (
+        <div className="max-w-3xl mx-auto px-6 lg:px-10 mb-8">
+          <a
+            href={article.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="article-external-link"
+            className="inline-flex items-center gap-2 text-[#987239] hover:text-[#2D332F] text-sm border-b border-[#987239] pb-1 break-all"
+          >
+            🔗 {article.link_url}
+          </a>
+        </div>
+      )}
+
       {/* Body */}
       <div className="max-w-3xl mx-auto px-6 lg:px-10 pb-10">
         <div className="article-prose">

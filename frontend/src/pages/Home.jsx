@@ -21,10 +21,7 @@ const SectionImageCard = ({ section, count = 0 }) => (
     />
     <div className="absolute inset-0 bg-gradient-to-t from-[#2D332F]/95 via-[#2D332F]/45 to-[#2D332F]/10" />
     <div className="absolute inset-x-0 bottom-0 p-7 text-[#FAF8F5]">
-      <span className="text-[11px] tracking-[0.3em] text-[#D4A373] uppercase">
-        قسم
-      </span>
-      <h3 className="font-display text-3xl md:text-4xl mt-2 leading-tight">
+      <h3 className="font-display text-3xl md:text-4xl leading-tight">
         {section.label}
       </h3>
       <p className="text-sm opacity-85 mt-2 leading-loose line-clamp-2">
@@ -77,9 +74,6 @@ const Home = () => {
         <div className="absolute inset-0 bg-[#F0EBE1]" />
         <div className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-24 lg:pt-24 lg:pb-32 grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-7 editorial-rise">
-            <p className="text-xs tracking-[0.4em] text-[#987239] mb-6 uppercase">
-              العدد الأول · مجلة دورية إلكترونية
-            </p>
             <h1 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[1.05] text-[#2D332F] mb-4">
               معاً نبني
               <br />
@@ -181,16 +175,6 @@ const Home = () => {
         className="max-w-7xl mx-auto px-6 lg:px-10 py-20"
         data-testid="sections-gallery"
       >
-        <div className="flex items-end justify-between mb-12 border-b border-[#E2DAC8] pb-6">
-          <div>
-            <p className="text-xs tracking-[0.3em] text-[#987239] mb-2 uppercase">
-              الأقسام
-            </p>
-            <h2 className="font-display text-4xl md:text-5xl text-[#2D332F]">
-              تصفّحي أقسام المجلة
-            </h2>
-          </div>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {SECTIONS.map((s) => (
             <SectionImageCard
@@ -215,9 +199,6 @@ const Home = () => {
             >
               <div className="flex items-end justify-between mb-10 border-b border-[#E2DAC8] pb-5">
                 <div>
-                  <p className="text-xs tracking-[0.3em] text-[#987239] mb-2 uppercase">
-                    قسم
-                  </p>
                   <h2 className="font-display text-3xl md:text-4xl text-[#2D332F]">
                     {s.label}
                   </h2>

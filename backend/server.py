@@ -20,7 +20,9 @@ load_dotenv(ROOT_DIR / '.env')
 UPLOADS_DIR = ROOT_DIR / 'uploads'
 UPLOADS_DIR.mkdir(exist_ok=True)
 ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+ALLOWED_VIDEO_EXT = {".mp4", ".mov", ".webm", ".m4v", ".ogg"}
+MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+MAX_VIDEO_BYTES = 50 * 1024 * 1024  # 50 MB
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -59,6 +61,8 @@ class Article(BaseModel):
     content: str
     section: str  # awareness | news | excellence | voice
     image_url: str = ""
+    video_url: str = ""
+    link_url: str = ""
     author: str = "هيئة التحرير"
     featured: bool = False
     likes: int = 0
@@ -71,6 +75,8 @@ class ArticleCreate(BaseModel):
     content: str
     section: str
     image_url: Optional[str] = ""
+    video_url: Optional[str] = ""
+    link_url: Optional[str] = ""
     author: Optional[str] = "هيئة التحرير"
     featured: Optional[bool] = False
 
@@ -81,6 +87,8 @@ class PublicPostCreate(BaseModel):
     content: str
     author: Optional[str] = "ولي أمر"
     image_url: Optional[str] = ""
+    video_url: Optional[str] = ""
+    link_url: Optional[str] = ""
 
 
 class ArticleUpdate(BaseModel):
@@ -261,6 +269,8 @@ async def create_section_post(section: str, payload: PublicPostCreate):
         content=content,
         section=section,
         image_url=(payload.image_url or "").strip(),
+        video_url=(payload.video_url or "").strip(),
+        link_url=(payload.link_url or "").strip(),
         author=(payload.author or "ولي أمر").strip() or "ولي أمر",
         featured=False,
     )
@@ -283,11 +293,18 @@ class UploadResponse(BaseModel):
 @api_router.post("/uploads", response_model=UploadResponse)
 async def upload_image(file: UploadFile = File(...)):
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in ALLOWED_IMAGE_EXT:
-        raise HTTPException(status_code=400, detail="نوع الصورة غير مدعوم")
+    is_image = suffix in ALLOWED_IMAGE_EXT
+    is_video = suffix in ALLOWED_VIDEO_EXT
+    if not (is_image or is_video):
+        raise HTTPException(status_code=400, detail="نوع الملف غير مدعوم")
     contents = await file.read()
-    if len(contents) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="حجم الصورة يتجاوز 5 ميغابايت")
+    max_bytes = MAX_VIDEO_BYTES if is_video else MAX_IMAGE_BYTES
+    if len(contents) > max_bytes:
+        limit_mb = max_bytes // (1024 * 1024)
+        raise HTTPException(
+            status_code=400,
+            detail=f"حجم الملف يتجاوز {limit_mb} ميغابايت",
+        )
     fname = f"{uuid.uuid4().hex}{suffix}"
     fpath = UPLOADS_DIR / fname
     with open(fpath, "wb") as f:
