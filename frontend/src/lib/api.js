@@ -14,7 +14,7 @@ export const SECTION_DESCRIPTIONS = {
   awareness: "توجيهات تربوية للطالبات",
   news: "آخر مستجدّات المدرسة وأنشطتها",
   excellence: "تكريم الطالبات المتميّزات في مجالات مختلفة",
-  voice: "مساحة لأولياء الأمور لكتابة المواضيع وتفاعل القارئات معها",
+  voice: "مقترحات أولياء الأمور",
 };
 
 export const SECTIONS = [
@@ -46,13 +46,13 @@ export const SECTION_IMAGES = {
     "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1600&q=80",
   news: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1600&q=80",
   excellence:
-    "https://images.unsplash.com/photo-1518152006812-edab29b069ac?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=1600&q=80",
   voice:
-    "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1600&q=80",
 };
 
 export const PAGE_IMAGES = {
-  hero: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=1600&q=80",
+  hero: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=1600&q=80",
   opinion:
     "https://images.unsplash.com/photo-1519677100203-a0e668c92439?auto=format&fit=crop&w=1600&q=80",
   subscribe:
