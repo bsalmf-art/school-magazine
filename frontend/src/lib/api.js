@@ -48,7 +48,7 @@ export const SECTION_IMAGES = {
   excellence:
     "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&w=1600&q=80",
   voice:
-    "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1485579149621-3123dd979885?auto=format&fit=crop&w=1600&q=80",
 };
 
 export const PAGE_IMAGES = {
