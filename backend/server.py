@@ -34,8 +34,8 @@ db = client[os.environ['DB_NAME']]
 ADMIN_SEED_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_SEED_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin1234')
 
-# In-memory admin tokens (ephemeral, adequate for magazine admin)
-ACTIVE_TOKENS: set = set()
+# In-memory admin tokens: token -> {"id": admin_id, "username": str}
+ACTIVE_TOKENS: dict = {}
 
 
 def hash_password(password: str) -> str:
@@ -169,13 +169,14 @@ def parse_dt(doc: dict) -> dict:
     return doc
 
 
-async def require_admin(authorization: Optional[str] = Header(None)):
+async def require_admin(authorization: Optional[str] = Header(None)) -> dict:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized")
     token = authorization.split(" ", 1)[1].strip()
-    if token not in ACTIVE_TOKENS:
+    session = ACTIVE_TOKENS.get(token)
+    if not session:
         raise HTTPException(status_code=401, detail="Invalid token")
-    return True
+    return {"token": token, **session}
 
 
 # ============ ROUTES ============
@@ -383,15 +384,18 @@ async def delete_opinion(oid: str, _: bool = Depends(require_admin)):
 # --- Admin auth ---
 @api_router.post("/admin/login")
 async def admin_login(payload: AdminLogin):
-    admin_doc = await db.admin.find_one({}, {"_id": 0})
-    if not admin_doc:
-        raise HTTPException(status_code=500, detail="حساب المدير غير مُهيّأ")
-    if payload.username != admin_doc.get("username") or not verify_password(
+    admin_doc = await db.admin.find_one(
+        {"username": payload.username.strip()}, {"_id": 0}
+    )
+    if not admin_doc or not verify_password(
         payload.password, admin_doc.get("password_hash", "")
     ):
         raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
     token = secrets.token_urlsafe(32)
-    ACTIVE_TOKENS.add(token)
+    ACTIVE_TOKENS[token] = {
+        "id": admin_doc["id"],
+        "username": admin_doc["username"],
+    }
     return {"token": token, "username": admin_doc["username"]}
 
 
@@ -399,15 +403,13 @@ async def admin_login(payload: AdminLogin):
 async def admin_logout(authorization: Optional[str] = Header(None)):
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ", 1)[1].strip()
-        ACTIVE_TOKENS.discard(token)
+        ACTIVE_TOKENS.pop(token, None)
     return {"ok": True}
 
 
 @api_router.get("/admin/me")
-async def admin_me(_: bool = Depends(require_admin)):
-    admin_doc = await db.admin.find_one({}, {"_id": 0, "password_hash": 0})
-    username = admin_doc.get("username") if admin_doc else "admin"
-    return {"username": username, "authenticated": True}
+async def admin_me(session: dict = Depends(require_admin)):
+    return {"username": session["username"], "id": session["id"], "authenticated": True}
 
 
 class AdminCredentialsUpdate(BaseModel):
@@ -418,13 +420,13 @@ class AdminCredentialsUpdate(BaseModel):
 
 @api_router.post("/admin/credentials")
 async def update_admin_credentials(
-    payload: AdminCredentialsUpdate, _: bool = Depends(require_admin)
+    payload: AdminCredentialsUpdate, session: dict = Depends(require_admin)
 ):
-    admin_doc = await db.admin.find_one({}, {"_id": 0})
+    """Update CURRENT admin's own username/password."""
+    admin_doc = await db.admin.find_one({"id": session["id"]}, {"_id": 0})
     if not admin_doc:
-        raise HTTPException(status_code=500, detail="حساب المدير غير مُهيّأ")
+        raise HTTPException(status_code=404, detail="حساب المدير غير موجود")
 
-    # Verify current password
     if not verify_password(payload.current_password, admin_doc.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="كلمة المرور الحالية غير صحيحة")
 
@@ -436,24 +438,132 @@ async def update_admin_credentials(
             raise HTTPException(
                 status_code=400, detail="اسم المستخدم يجب أن يكون 3 أحرف على الأقل"
             )
+        # ensure unique
+        existing = await db.admin.find_one(
+            {"username": new_username, "id": {"$ne": session["id"]}}, {"_id": 0}
+        )
+        if existing:
+            raise HTTPException(status_code=400, detail="اسم المستخدم محجوز")
         updates["username"] = new_username
 
     if payload.new_password is not None:
-        new_password = payload.new_password
-        if len(new_password) < 6:
+        if len(payload.new_password) < 6:
             raise HTTPException(
                 status_code=400, detail="كلمة المرور يجب أن تكون 6 أحرف على الأقل"
             )
-        updates["password_hash"] = hash_password(new_password)
+        updates["password_hash"] = hash_password(payload.new_password)
 
     if not updates:
         raise HTTPException(status_code=400, detail="لا يوجد بيانات للتحديث")
 
-    await db.admin.update_one({}, {"$set": updates})
+    await db.admin.update_one({"id": session["id"]}, {"$set": updates})
 
-    # Invalidate all existing tokens so admin must re-login
-    ACTIVE_TOKENS.clear()
-    return {"ok": True, "username": updates.get("username", admin_doc["username"])}
+    # Invalidate sessions for this admin (force re-login on this account)
+    for t, s in list(ACTIVE_TOKENS.items()):
+        if s["id"] == session["id"]:
+            ACTIVE_TOKENS.pop(t, None)
+    new_username = updates.get("username", admin_doc["username"])
+    return {"ok": True, "username": new_username}
+
+
+# --- Multi-admin management ---
+class AdminPublic(BaseModel):
+    id: str
+    username: str
+    created_at: datetime
+
+
+class AdminCreate(BaseModel):
+    username: str
+    password: str
+
+
+class AdminUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+
+@api_router.get("/admins", response_model=List[AdminPublic])
+async def list_admins(_: dict = Depends(require_admin)):
+    docs = await db.admin.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", 1).to_list(100)
+    out = []
+    for d in docs:
+        out.append(AdminPublic(**parse_dt(d)))
+    return out
+
+
+@api_router.post("/admins", response_model=AdminPublic)
+async def create_admin(payload: AdminCreate, _: dict = Depends(require_admin)):
+    username = payload.username.strip()
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="اسم المستخدم يجب أن يكون 3 أحرف على الأقل")
+    if len(payload.password) < 6:
+        raise HTTPException(status_code=400, detail="كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+    existing = await db.admin.find_one({"username": username}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="اسم المستخدم محجوز")
+    new_doc = {
+        "id": str(uuid.uuid4()),
+        "username": username,
+        "password_hash": hash_password(payload.password),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.admin.insert_one(new_doc)
+    return AdminPublic(
+        id=new_doc["id"],
+        username=new_doc["username"],
+        created_at=datetime.fromisoformat(new_doc["created_at"]),
+    )
+
+
+@api_router.put("/admins/{admin_id}", response_model=AdminPublic)
+async def update_admin(
+    admin_id: str, payload: AdminUpdate, _: dict = Depends(require_admin)
+):
+    doc = await db.admin.find_one({"id": admin_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="غير موجود")
+    updates = {}
+    if payload.username is not None:
+        username = payload.username.strip()
+        if len(username) < 3:
+            raise HTTPException(status_code=400, detail="اسم المستخدم يجب أن يكون 3 أحرف على الأقل")
+        existing = await db.admin.find_one(
+            {"username": username, "id": {"$ne": admin_id}}, {"_id": 0}
+        )
+        if existing:
+            raise HTTPException(status_code=400, detail="اسم المستخدم محجوز")
+        updates["username"] = username
+    if payload.password is not None:
+        if len(payload.password) < 6:
+            raise HTTPException(status_code=400, detail="كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+        updates["password_hash"] = hash_password(payload.password)
+    if not updates:
+        raise HTTPException(status_code=400, detail="لا يوجد بيانات للتحديث")
+    await db.admin.update_one({"id": admin_id}, {"$set": updates})
+    # Invalidate sessions for this admin
+    for t, s in list(ACTIVE_TOKENS.items()):
+        if s["id"] == admin_id:
+            ACTIVE_TOKENS.pop(t, None)
+    fresh = await db.admin.find_one({"id": admin_id}, {"_id": 0, "password_hash": 0})
+    return AdminPublic(**parse_dt(fresh))
+
+
+@api_router.delete("/admins/{admin_id}")
+async def delete_admin(admin_id: str, session: dict = Depends(require_admin)):
+    if admin_id == session["id"]:
+        raise HTTPException(status_code=400, detail="لا يمكن حذف حسابك الحالي")
+    total = await db.admin.count_documents({})
+    if total <= 1:
+        raise HTTPException(status_code=400, detail="يجب أن يبقى مدير واحد على الأقل")
+    result = await db.admin.delete_one({"id": admin_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="غير موجود")
+    # Invalidate sessions for deleted admin
+    for t, s in list(ACTIVE_TOKENS.items()):
+        if s["id"] == admin_id:
+            ACTIVE_TOKENS.pop(t, None)
+    return {"ok": True}
 
 
 # --- Subscriptions (الاشتراك في المجلة) ---
@@ -563,12 +673,26 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def seed_admin():
-    """Ensure exactly one admin document exists. Seed from env on first start."""
-    existing = await db.admin.find_one({})
-    if existing is None:
+    """Ensure at least one admin exists. Seed from env on first start.
+    Also migrate any legacy admin doc (without id/created_at) to new schema.
+    """
+    # Migrate legacy docs missing id
+    async for legacy in db.admin.find({"id": {"$exists": False}}, {"_id": 1}):
+        await db.admin.update_one(
+            {"_id": legacy["_id"]},
+            {"$set": {
+                "id": str(uuid.uuid4()),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }},
+        )
+
+    count = await db.admin.count_documents({})
+    if count == 0:
         await db.admin.insert_one({
+            "id": str(uuid.uuid4()),
             "username": ADMIN_SEED_USERNAME,
             "password_hash": hash_password(ADMIN_SEED_PASSWORD),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         })
         logging.info(f"Admin seeded with username '{ADMIN_SEED_USERNAME}'")
 

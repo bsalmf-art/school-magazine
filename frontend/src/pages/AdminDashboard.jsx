@@ -22,7 +22,7 @@ import {
   SelectContent,
   SelectItem,
 } from "../components/ui/select";
-import { Trash2, Plus, Edit, LogOut, Star, Mail, KeyRound } from "lucide-react";
+import { Trash2, Plus, Edit, LogOut, Star, Mail, KeyRound, UserPlus } from "lucide-react";
 
 const empty = {
   title: "",
@@ -52,21 +52,31 @@ const AdminDashboard = () => {
     confirm_password: "",
   });
   const [credsBusy, setCredsBusy] = useState(false);
+  const [admins, setAdmins] = useState([]);
+  const [currentAdminId, setCurrentAdminId] = useState(null);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [adminEditing, setAdminEditing] = useState(null);
+  const [adminForm, setAdminForm] = useState({ username: "", password: "" });
+  const [adminBusy, setAdminBusy] = useState(false);
   const navigate = useNavigate();
 
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [art, sug, sub, rea] = await Promise.all([
+      const [art, sug, sub, rea, adm, me] = await Promise.all([
         api.get("/articles"),
         api.get("/suggestions"),
         api.get("/subscriptions"),
         api.get("/reactions"),
+        api.get("/admins"),
+        api.get("/admin/me"),
       ]);
       setArticles(art.data);
       setSuggestions(sug.data);
       setSubscriptions(sub.data);
       setReactions(rea.data);
+      setAdmins(adm.data);
+      setCurrentAdminId(me.data.id);
     } catch (err) {
       if (err?.response?.status === 401) {
         localStorage.removeItem("admin_token");
@@ -212,6 +222,79 @@ const AdminDashboard = () => {
     }
   };
 
+  const openNewAdmin = () => {
+    setAdminEditing(null);
+    setAdminForm({ username: "", password: "" });
+    setAdminDialogOpen(true);
+  };
+
+  const openEditAdmin = (a) => {
+    setAdminEditing(a);
+    setAdminForm({ username: a.username, password: "" });
+    setAdminDialogOpen(true);
+  };
+
+  const saveAdmin = async (e) => {
+    e.preventDefault();
+    const username = adminForm.username.trim();
+    if (username.length < 3) {
+      toast.error("اسم المستخدم يجب أن يكون 3 أحرف على الأقل");
+      return;
+    }
+    if (!adminEditing && adminForm.password.length < 6) {
+      toast.error("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+    if (adminEditing && adminForm.password && adminForm.password.length < 6) {
+      toast.error("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+    setAdminBusy(true);
+    try {
+      if (adminEditing) {
+        const payload = {};
+        if (username !== adminEditing.username) payload.username = username;
+        if (adminForm.password) payload.password = adminForm.password;
+        if (Object.keys(payload).length === 0) {
+          toast("لم تتغيّر أي بيانات");
+          setAdminDialogOpen(false);
+          return;
+        }
+        await api.put(`/admins/${adminEditing.id}`, payload);
+        toast.success("تم تحديث المدير");
+      } else {
+        await api.post("/admins", {
+          username,
+          password: adminForm.password,
+        });
+        toast.success("تم إضافة المدير");
+      }
+      setAdminDialogOpen(false);
+      loadAll();
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "تعذّر الحفظ";
+      toast.error(msg);
+    } finally {
+      setAdminBusy(false);
+    }
+  };
+
+  const deleteAdmin = async (a) => {
+    if (a.id === currentAdminId) {
+      toast.error("لا يمكنك حذف حسابك");
+      return;
+    }
+    if (!window.confirm(`حذف المدير "${a.username}"؟`)) return;
+    try {
+      await api.delete(`/admins/${a.id}`);
+      toast.success("تم الحذف");
+      loadAll();
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "تعذّر الحذف";
+      toast.error(msg);
+    }
+  };
+
   return (
     <div className="bg-[#FAF8F5] min-h-screen" data-testid="admin-dashboard">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12">
@@ -260,6 +343,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="reactions" data-testid="tab-reactions">
               التفاعلات ({totalReactions})
+            </TabsTrigger>
+            <TabsTrigger value="admins" data-testid="tab-admins">
+              المدراء ({admins.length})
             </TabsTrigger>
           </TabsList>
 
@@ -493,6 +579,83 @@ const AdminDashboard = () => {
               })}
             </div>
           </TabsContent>
+
+          {/* Admins */}
+          <TabsContent value="admins">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-display text-2xl text-[#2D332F]">
+                إدارة المدراء
+              </h2>
+              <button
+                onClick={openNewAdmin}
+                data-testid="add-admin-button"
+                className="btn-pill btn-primary"
+              >
+                <UserPlus size={16} />
+                مدير جديد
+              </button>
+            </div>
+            {admins.length === 0 ? (
+              <p className="text-center text-[#5C6660] py-10">لا يوجد مدراء.</p>
+            ) : (
+              <div className="bg-white border border-[#E2DAC8] rounded-xl overflow-hidden">
+                <table className="w-full text-right">
+                  <thead className="bg-[#F0EBE1]">
+                    <tr className="text-sm text-[#2D332F]">
+                      <th className="px-4 py-3 font-semibold">اسم المستخدم</th>
+                      <th className="px-4 py-3 font-semibold">تاريخ الإنشاء</th>
+                      <th className="px-4 py-3 font-semibold">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {admins.map((a) => (
+                      <tr
+                        key={a.id}
+                        className="border-t border-[#E2DAC8] text-sm"
+                        data-testid={`admin-row-${a.id}`}
+                      >
+                        <td className="px-4 py-3 text-[#2D332F]">
+                          {a.username}
+                          {a.id === currentAdminId && (
+                            <span className="ms-2 text-xs px-2 py-0.5 rounded-full bg-[#8B9D83]/15 text-[#8B9D83]">
+                              أنت
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-[#5C6660]">
+                          {new Date(a.created_at).toLocaleDateString("ar")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => openEditAdmin(a)}
+                              data-testid={`edit-admin-${a.id}`}
+                              className="p-2 rounded-lg hover:bg-[#F0EBE1]"
+                              aria-label="تعديل"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => deleteAdmin(a)}
+                              disabled={a.id === currentAdminId}
+                              data-testid={`delete-admin-${a.id}`}
+                              className="p-2 rounded-lg hover:bg-red-50 text-red-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                              aria-label="حذف"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="mt-6 text-xs text-[#5C6660] leading-loose">
+              لا يمكنك حذف حسابك الحالي، ولا يمكن حذف آخر مدير في النظام.
+            </p>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -703,6 +866,77 @@ const AdminDashboard = () => {
                 onClick={() => setCredsDialogOpen(false)}
                 className="btn-pill btn-outline"
                 data-testid="creds-cancel-button"
+              >
+                إلغاء
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Add/Edit Dialog */}
+      <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+        <DialogContent
+          dir="rtl"
+          className="max-w-md bg-[#FAF8F5]"
+          data-testid="admin-dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl text-right">
+              {adminEditing ? `تعديل: ${adminEditing.username}` : "مدير جديد"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={saveAdmin} className="space-y-4 mt-4">
+            <div>
+              <label className="block text-sm font-semibold text-[#2D332F] mb-2">
+                اسم المستخدم <span className="text-[#987239]">*</span>
+              </label>
+              <input
+                type="text"
+                value={adminForm.username}
+                onChange={(e) =>
+                  setAdminForm({ ...adminForm, username: e.target.value })
+                }
+                data-testid="admin-form-username"
+                autoComplete="username"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#E2DAC8] outline-none focus:border-[#8B9D83]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#2D332F] mb-2">
+                كلمة المرور
+                {!adminEditing && <span className="text-[#987239]"> *</span>}
+              </label>
+              <input
+                type="password"
+                value={adminForm.password}
+                onChange={(e) =>
+                  setAdminForm({ ...adminForm, password: e.target.value })
+                }
+                placeholder={
+                  adminEditing
+                    ? "اتركها فارغة لعدم التغيير"
+                    : "6 أحرف على الأقل"
+                }
+                data-testid="admin-form-password"
+                autoComplete="new-password"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#E2DAC8] outline-none focus:border-[#8B9D83]"
+              />
+            </div>
+            <DialogFooter className="mt-6 flex-row-reverse gap-3">
+              <button
+                type="submit"
+                disabled={adminBusy}
+                data-testid="admin-form-save"
+                className="btn-pill btn-primary disabled:opacity-50"
+              >
+                {adminBusy ? "جارٍ الحفظ..." : adminEditing ? "تحديث" : "إضافة"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminDialogOpen(false)}
+                className="btn-pill btn-outline"
+                data-testid="admin-form-cancel"
               >
                 إلغاء
               </button>
