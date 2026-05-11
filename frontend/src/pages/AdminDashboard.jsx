@@ -22,7 +22,7 @@ import {
   SelectContent,
   SelectItem,
 } from "../components/ui/select";
-import { Trash2, Plus, Edit, LogOut, Star, Mail } from "lucide-react";
+import { Trash2, Plus, Edit, LogOut, Star, Mail, KeyRound } from "lucide-react";
 
 const empty = {
   title: "",
@@ -44,6 +44,14 @@ const AdminDashboard = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
+  const [credsDialogOpen, setCredsDialogOpen] = useState(false);
+  const [credsForm, setCredsForm] = useState({
+    current_password: "",
+    new_username: "",
+    new_password: "",
+    confirm_password: "",
+  });
+  const [credsBusy, setCredsBusy] = useState(false);
   const navigate = useNavigate();
 
   const loadAll = useCallback(async () => {
@@ -162,6 +170,48 @@ const AdminDashboard = () => {
 
   const totalReactions = reactions.reduce((a, b) => a + b.count, 0);
 
+  const submitCredentials = async (e) => {
+    e.preventDefault();
+    if (!credsForm.current_password) {
+      toast.error("يُرجى إدخال كلمة المرور الحالية");
+      return;
+    }
+    if (
+      credsForm.new_password &&
+      credsForm.new_password !== credsForm.confirm_password
+    ) {
+      toast.error("كلمة المرور الجديدة غير متطابقة");
+      return;
+    }
+    if (!credsForm.new_username && !credsForm.new_password) {
+      toast.error("يُرجى إدخال اسم مستخدم جديد أو كلمة مرور جديدة");
+      return;
+    }
+    setCredsBusy(true);
+    try {
+      const payload = { current_password: credsForm.current_password };
+      if (credsForm.new_username) payload.new_username = credsForm.new_username;
+      if (credsForm.new_password) payload.new_password = credsForm.new_password;
+      await api.post("/admin/credentials", payload);
+      toast.success("تم تحديث بياناتك. يُرجى إعادة تسجيل الدخول");
+      localStorage.removeItem("admin_token");
+      setCredsDialogOpen(false);
+      setCredsForm({
+        current_password: "",
+        new_username: "",
+        new_password: "",
+        confirm_password: "",
+      });
+      navigate("/admin/login");
+    } catch (err) {
+      const msg =
+        err?.response?.data?.detail || "تعذّر تحديث البيانات";
+      toast.error(msg);
+    } finally {
+      setCredsBusy(false);
+    }
+  };
+
   return (
     <div className="bg-[#FAF8F5] min-h-screen" data-testid="admin-dashboard">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12">
@@ -174,14 +224,24 @@ const AdminDashboard = () => {
               إدارة المجلة
             </h1>
           </div>
-          <button
-            onClick={logout}
-            data-testid="admin-logout-button"
-            className="btn-pill btn-outline"
-          >
-            <LogOut size={16} />
-            تسجيل الخروج
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCredsDialogOpen(true)}
+              data-testid="admin-credentials-button"
+              className="btn-pill btn-outline"
+            >
+              <KeyRound size={16} />
+              بياناتي
+            </button>
+            <button
+              onClick={logout}
+              data-testid="admin-logout-button"
+              className="btn-pill btn-outline"
+            >
+              <LogOut size={16} />
+              تسجيل الخروج
+            </button>
+          </div>
         </div>
 
         <Tabs defaultValue="articles" dir="rtl">
@@ -540,6 +600,114 @@ const AdminDashboard = () => {
               إلغاء
             </button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Credentials Dialog */}
+      <Dialog open={credsDialogOpen} onOpenChange={setCredsDialogOpen}>
+        <DialogContent
+          dir="rtl"
+          className="max-w-md bg-[#FAF8F5]"
+          data-testid="credentials-dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl text-right">
+              تعديل بيانات الدخول
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitCredentials} className="space-y-4 mt-4">
+            <div>
+              <label className="block text-sm font-semibold text-[#2D332F] mb-2">
+                كلمة المرور الحالية <span className="text-[#987239]">*</span>
+              </label>
+              <input
+                type="password"
+                value={credsForm.current_password}
+                onChange={(e) =>
+                  setCredsForm({
+                    ...credsForm,
+                    current_password: e.target.value,
+                  })
+                }
+                data-testid="creds-current-password"
+                autoComplete="current-password"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#E2DAC8] outline-none focus:border-[#8B9D83]"
+              />
+            </div>
+            <div className="border-t border-[#E2DAC8] pt-4">
+              <p className="text-xs text-[#5C6660] mb-3">
+                املأ الحقول التي تريد تغييرها فقط
+              </p>
+              <label className="block text-sm font-semibold text-[#2D332F] mb-2">
+                اسم المستخدم الجديد
+              </label>
+              <input
+                type="text"
+                placeholder="اتركه فارغاً لعدم التغيير"
+                value={credsForm.new_username}
+                onChange={(e) =>
+                  setCredsForm({ ...credsForm, new_username: e.target.value })
+                }
+                data-testid="creds-new-username"
+                autoComplete="username"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#E2DAC8] outline-none focus:border-[#8B9D83]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#2D332F] mb-2">
+                كلمة المرور الجديدة
+              </label>
+              <input
+                type="password"
+                placeholder="6 أحرف على الأقل"
+                value={credsForm.new_password}
+                onChange={(e) =>
+                  setCredsForm({ ...credsForm, new_password: e.target.value })
+                }
+                data-testid="creds-new-password"
+                autoComplete="new-password"
+                className="w-full px-4 py-3 rounded-lg bg-white border border-[#E2DAC8] outline-none focus:border-[#8B9D83]"
+              />
+            </div>
+            {credsForm.new_password && (
+              <div>
+                <label className="block text-sm font-semibold text-[#2D332F] mb-2">
+                  تأكيد كلمة المرور الجديدة
+                </label>
+                <input
+                  type="password"
+                  value={credsForm.confirm_password}
+                  onChange={(e) =>
+                    setCredsForm({
+                      ...credsForm,
+                      confirm_password: e.target.value,
+                    })
+                  }
+                  data-testid="creds-confirm-password"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 rounded-lg bg-white border border-[#E2DAC8] outline-none focus:border-[#8B9D83]"
+                />
+              </div>
+            )}
+            <DialogFooter className="mt-6 flex-row-reverse gap-3">
+              <button
+                type="submit"
+                disabled={credsBusy}
+                data-testid="creds-save-button"
+                className="btn-pill btn-primary disabled:opacity-50"
+              >
+                {credsBusy ? "جارٍ الحفظ..." : "حفظ"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCredsDialogOpen(false)}
+                className="btn-pill btn-outline"
+                data-testid="creds-cancel-button"
+              >
+                إلغاء
+              </button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

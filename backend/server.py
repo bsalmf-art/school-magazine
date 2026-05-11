@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import secrets
+import bcrypt
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -29,12 +30,24 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Admin credentials (from env)
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin1234')
+# Admin credentials (env values used only as seed on first start)
+ADMIN_SEED_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_SEED_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin1234')
 
 # In-memory admin tokens (ephemeral, adequate for magazine admin)
 ACTIVE_TOKENS: set = set()
+
+
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 app = FastAPI()
@@ -370,11 +383,16 @@ async def delete_opinion(oid: str, _: bool = Depends(require_admin)):
 # --- Admin auth ---
 @api_router.post("/admin/login")
 async def admin_login(payload: AdminLogin):
-    if payload.username != ADMIN_USERNAME or payload.password != ADMIN_PASSWORD:
+    admin_doc = await db.admin.find_one({}, {"_id": 0})
+    if not admin_doc:
+        raise HTTPException(status_code=500, detail="حساب المدير غير مُهيّأ")
+    if payload.username != admin_doc.get("username") or not verify_password(
+        payload.password, admin_doc.get("password_hash", "")
+    ):
         raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
     token = secrets.token_urlsafe(32)
     ACTIVE_TOKENS.add(token)
-    return {"token": token, "username": ADMIN_USERNAME}
+    return {"token": token, "username": admin_doc["username"]}
 
 
 @api_router.post("/admin/logout")
@@ -387,7 +405,55 @@ async def admin_logout(authorization: Optional[str] = Header(None)):
 
 @api_router.get("/admin/me")
 async def admin_me(_: bool = Depends(require_admin)):
-    return {"username": ADMIN_USERNAME, "authenticated": True}
+    admin_doc = await db.admin.find_one({}, {"_id": 0, "password_hash": 0})
+    username = admin_doc.get("username") if admin_doc else "admin"
+    return {"username": username, "authenticated": True}
+
+
+class AdminCredentialsUpdate(BaseModel):
+    current_password: str
+    new_username: Optional[str] = None
+    new_password: Optional[str] = None
+
+
+@api_router.post("/admin/credentials")
+async def update_admin_credentials(
+    payload: AdminCredentialsUpdate, _: bool = Depends(require_admin)
+):
+    admin_doc = await db.admin.find_one({}, {"_id": 0})
+    if not admin_doc:
+        raise HTTPException(status_code=500, detail="حساب المدير غير مُهيّأ")
+
+    # Verify current password
+    if not verify_password(payload.current_password, admin_doc.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="كلمة المرور الحالية غير صحيحة")
+
+    updates = {}
+
+    if payload.new_username is not None:
+        new_username = payload.new_username.strip()
+        if len(new_username) < 3:
+            raise HTTPException(
+                status_code=400, detail="اسم المستخدم يجب أن يكون 3 أحرف على الأقل"
+            )
+        updates["username"] = new_username
+
+    if payload.new_password is not None:
+        new_password = payload.new_password
+        if len(new_password) < 6:
+            raise HTTPException(
+                status_code=400, detail="كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+            )
+        updates["password_hash"] = hash_password(new_password)
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="لا يوجد بيانات للتحديث")
+
+    await db.admin.update_one({}, {"$set": updates})
+
+    # Invalidate all existing tokens so admin must re-login
+    ACTIVE_TOKENS.clear()
+    return {"ok": True, "username": updates.get("username", admin_doc["username"])}
 
 
 # --- Subscriptions (الاشتراك في المجلة) ---
@@ -493,6 +559,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def seed_admin():
+    """Ensure exactly one admin document exists. Seed from env on first start."""
+    existing = await db.admin.find_one({})
+    if existing is None:
+        await db.admin.insert_one({
+            "username": ADMIN_SEED_USERNAME,
+            "password_hash": hash_password(ADMIN_SEED_PASSWORD),
+        })
+        logging.info(f"Admin seeded with username '{ADMIN_SEED_USERNAME}'")
 
 
 @app.on_event("shutdown")
