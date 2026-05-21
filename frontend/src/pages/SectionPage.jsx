@@ -54,7 +54,8 @@ const PostForm = ({ section, onCreated }) => {
       const res = await api.post("/uploads", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      const fullUrl = process.env.REACT_APP_BACKEND_URL + res.data.url;
+      const baseUrl = process.env.REACT_APP_BACKEND_URL || "";
+      const fullUrl = baseUrl + res.data.url;
       if (kind === "video") {
         setVideoUrl(fullUrl);
         toast.success("تم رفع الفيديو");
