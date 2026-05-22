@@ -27,7 +27,11 @@ MAX_VIDEO_BYTES = 50 * 1024 * 1024  # 50 MB
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000,
+)
 db = client[os.environ['DB_NAME']]
 
 # Admin credentials (env values used only as seed on first start)
@@ -676,25 +680,28 @@ async def seed_admin():
     """Ensure at least one admin exists. Seed from env on first start.
     Also migrate any legacy admin doc (without id/created_at) to new schema.
     """
-    # Migrate legacy docs missing id
-    async for legacy in db.admin.find({"id": {"$exists": False}}, {"_id": 1}):
-        await db.admin.update_one(
-            {"_id": legacy["_id"]},
-            {"$set": {
-                "id": str(uuid.uuid4()),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            }},
-        )
+    try:
+        # Migrate legacy docs missing id
+        async for legacy in db.admin.find({"id": {"$exists": False}}, {"_id": 1}):
+            await db.admin.update_one(
+                {"_id": legacy["_id"]},
+                {"$set": {
+                    "id": str(uuid.uuid4()),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }},
+            )
 
-    count = await db.admin.count_documents({})
-    if count == 0:
-        await db.admin.insert_one({
-            "id": str(uuid.uuid4()),
-            "username": ADMIN_SEED_USERNAME,
-            "password_hash": hash_password(ADMIN_SEED_PASSWORD),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-        logging.info(f"Admin seeded with username '{ADMIN_SEED_USERNAME}'")
+        count = await db.admin.count_documents({})
+        if count == 0:
+            await db.admin.insert_one({
+                "id": str(uuid.uuid4()),
+                "username": ADMIN_SEED_USERNAME,
+                "password_hash": hash_password(ADMIN_SEED_PASSWORD),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logging.info(f"Admin seeded with username '{ADMIN_SEED_USERNAME}'")
+    except Exception as e:
+        logging.error(f"Startup MongoDB seed failed: {e}")
 
 
 @app.on_event("shutdown")
