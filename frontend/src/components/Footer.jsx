@@ -76,6 +76,7 @@ const Footer = () => {
       <div className="border-t border-[#FAF8F5]/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 py-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#C2A878]">
           <p>© {new Date().getFullYear()} المجلة الإلكترونية — جميع الحقوق محفوظة.</p>
+          <p>ابتكار وإعداد: أ. بثينة الفاضل</p>
           <p>تُصدر بحبٍّ، وتُقرأ بشغف.</p>
         </div>
       </div>
