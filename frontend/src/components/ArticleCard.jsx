@@ -3,6 +3,7 @@ import { ArrowLeft, Heart, ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import api, { SECTION_LABELS } from "../lib/api";
 import { toast } from "sonner";
+import { ShareButton } from "./ShareButton";
 
 const STORAGE_KEY = "liked_articles";
 
@@ -123,11 +124,12 @@ export const ArticleCard = ({ article, variant = "default", index = 0 }) => {
             </div>
           </div>
         </Link>
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5 flex items-center gap-3 flex-wrap">
           <LikeButton
             articleId={article.id}
             initialLikes={article.likes || 0}
           />
+          <ShareButton articleId={article.id} title={article.title} />
           <span className="text-xs text-[#5C6660]">بقلم {article.author}</span>
         </div>
       </div>
@@ -189,11 +191,14 @@ export const ArticleCard = ({ article, variant = "default", index = 0 }) => {
             🔗 {article.link_url}
           </a>
         )}
-        <div className="flex items-center justify-between border-t border-[#E2DAC8] pt-3">
-          <LikeButton
-            articleId={article.id}
-            initialLikes={article.likes || 0}
-          />
+        <div className="flex items-center justify-between border-t border-[#E2DAC8] pt-3 gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <LikeButton
+              articleId={article.id}
+              initialLikes={article.likes || 0}
+            />
+            <ShareButton articleId={article.id} title={article.title} />
+          </div>
           <Link
             to={`/articles/${article.id}`}
             className="text-xs text-[#987239] hover:text-[#2D332F]"
@@ -238,8 +243,11 @@ export const ArticleCard = ({ article, variant = "default", index = 0 }) => {
           {article.excerpt}
         </p>
       </Link>
-      <div className="mt-4 flex items-center justify-between">
-        <LikeButton articleId={article.id} initialLikes={article.likes || 0} />
+      <div className="mt-4 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <LikeButton articleId={article.id} initialLikes={article.likes || 0} />
+          <ShareButton articleId={article.id} title={article.title} />
+        </div>
         <p className="text-xs text-[#5C6660]">بقلم {article.author}</p>
       </div>
     </div>

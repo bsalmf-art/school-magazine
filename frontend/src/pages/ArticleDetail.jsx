@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import api, { SECTION_LABELS } from "../lib/api";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { LikeButton } from "../components/ArticleCard";
+import { ShareButton } from "../components/ShareButton";
 
 const ArticleDetail = () => {
   const { id } = useParams();
@@ -137,15 +138,22 @@ const ArticleDetail = () => {
           )}
         </div>
 
-        <div className="mt-12 flex flex-col items-center gap-3 border-y border-[#E2DAC8] py-8">
+        <div className="mt-12 flex flex-col items-center gap-4 border-y border-[#E2DAC8] py-8">
           <p className="text-xs tracking-[0.3em] text-[#987239] uppercase">
             هل أعجبك هذا الموضوع؟
           </p>
-          <LikeButton
-            articleId={article.id}
-            initialLikes={article.likes || 0}
-            size="large"
-          />
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <LikeButton
+              articleId={article.id}
+              initialLikes={article.likes || 0}
+              size="large"
+            />
+            <ShareButton
+              articleId={article.id}
+              title={article.title}
+              size="large"
+            />
+          </div>
         </div>
 
         <div className="mt-10 flex justify-between items-center">

@@ -323,6 +323,32 @@ async def upload_image(file: UploadFile = File(...)):
             status_code=400,
             detail=f"حجم الملف يتجاوز {limit_mb} ميغابايت",
         )
+
+    # Try Cloudinary first (permanent storage). Fall back to local disk if not configured.
+    if os.environ.get("CLOUDINARY_CLOUD_NAME"):
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            cloudinary.config(
+                cloud_name=os.environ["CLOUDINARY_CLOUD_NAME"],
+                api_key=os.environ["CLOUDINARY_API_KEY"],
+                api_secret=os.environ["CLOUDINARY_API_SECRET"],
+                secure=True,
+            )
+            resource_type = "video" if is_video else "image"
+            result = cloudinary.uploader.upload(
+                contents,
+                resource_type=resource_type,
+                folder="school-magazine",
+            )
+            return UploadResponse(
+                url=result["secure_url"],
+                filename=result.get("public_id", ""),
+            )
+        except Exception as e:
+            logging.error(f"Cloudinary upload failed: {e}")
+            # fall through to local disk
+
     fname = f"{uuid.uuid4().hex}{suffix}"
     fpath = UPLOADS_DIR / fname
     with open(fpath, "wb") as f:
